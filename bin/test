@@ -7,7 +7,7 @@
 
 BASE_DIR = File.expand_path('../..', __FILE__).freeze
 LIB_NAME = File.basename(Dir[File.join(BASE_DIR, '*.gemspec')].first, '.gemspec').freeze
-GLOB = File.expand_path('test/**/*_test.rb', BASE_DIR).freeze
+GLOB = File.expand_path("{test,#{LIB_NAME}-*/test}/**/*_test.rb", BASE_DIR).freeze
 
 ############################################################################################################
 ## Requires                                                                                               ##

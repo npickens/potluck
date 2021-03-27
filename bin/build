@@ -18,8 +18,8 @@ end
 BASE_DIR = File.expand_path(File.join('..', '..'), __FILE__).freeze
 VERSION_FILE = File.join(BASE_DIR, 'VERSION').freeze
 GEMSPEC_FILE = Dir[File.join(BASE_DIR, '*.gemspec')].first.freeze
-RUBY_FILE_WITH_VERSION = File.join(BASE_DIR, 'lib', File.basename(GEMSPEC_FILE, '.gemspec'),
-  'version.rb').freeze
+LIB_NAME = File.basename(GEMSPEC_FILE, '.gemspec').freeze
+RUBY_FILE_WITH_VERSION = File.join(BASE_DIR, 'lib', LIB_NAME, 'version.rb').freeze
 TEST_COMMAND = File.join(BASE_DIR, 'bin', 'test').freeze
 
 OLD_VERSION = File.read(VERSION_FILE).strip.freeze
@@ -66,11 +66,15 @@ end
 ############################################################################################################
 
 def build
-  begin_task('Building Ruby gem...')
+  begin_task('Building Ruby gems...')
 
   status = command("cd #{File.dirname(GEMSPEC_FILE)} && gem build #{File.basename(GEMSPEC_FILE)}")
+  finish_task(status, "Ruby gem built (#{LIB_NAME})", 'Build aborted')
 
-  finish_task(status, 'Ruby gem built', 'Build aborted')
+  Dir[File.join(BASE_DIR, "#{LIB_NAME}-*", '*.gemspec')].each do |gemspec_file|
+    status = command("cd #{File.dirname(gemspec_file)} && gem build #{File.basename(gemspec_file)}")
+    finish_task(status, "Ruby gem built (#{File.basename(gemspec_file, '.gemspec')})", 'Build aborted')
+  end
 ensure
   (update_version(OLD_VERSION, :quiet) rescue nil) if status != 0
 end
