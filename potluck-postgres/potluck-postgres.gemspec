@@ -22,6 +22,7 @@ Gem::Specification.new('potluck-postgres', version) do |spec|
   spec.required_ruby_version = '>= 2.5.8'
 
   spec.add_dependency('potluck', version)
+  spec.add_dependency('pg', '~> 1.2')
   spec.add_dependency('sequel', '~> 5.41')
 
   spec.add_development_dependency('bundler', '~> 2.0')
