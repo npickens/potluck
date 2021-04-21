@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 require('potluck')
+require('sequel')
 
 module Potluck
   class Postgres < Dish
