@@ -5,14 +5,16 @@ require('time')
 module Potluck
   class Nginx < Dish
     class SSL
-      # Based on https://hackernoon.com/how-properly-configure-nginx-server-for-tls-sg1d3udt
+      # Reference: https://ssl-config.mozilla.org/#server=nginx&config=intermediate&guideline=5.6
       DEFAULT_CONFIG = {
-        'ssl_ciphers' => 'ECDH+AESGCM:ECDH+AES256-CBC:ECDH+AES128-CBC:DH+3DES:!ADH:!AECDH:!MD5',
-        'ssl_prefer_server_ciphers' => 'on',
+        'ssl_ciphers' => 'ECDHE-ECDSA-AES128-GCM-SHA256:ECDHE-RSA-AES128-GCM-SHA256:ECDHE-ECDSA-AES256-GCM'\
+          '-SHA384:ECDHE-RSA-AES256-GCM-SHA384:ECDHE-ECDSA-CHACHA20-POLY1305:ECDHE-RSA-CHACHA20-POLY1305:D'\
+          'HE-RSA-AES128-GCM-SHA256:DHE-RSA-AES256-GCM-SHA384',
+        'ssl_prefer_server_ciphers' => 'off',
         'ssl_protocols' => 'TLSv1.2 TLSv1.3',
-        'ssl_session_cache' => 'shared:SSL:40m',
-        'ssl_session_tickets' => 'on',
-        'ssl_session_timeout' => '4h',
+        'ssl_session_cache' => 'shared:SSL:10m',
+        'ssl_session_tickets' => 'off',
+        'ssl_session_timeout' => '1d',
         'add_header' => {
           repeat: true,
           'Strict-Transport-Security' => '\'max-age=31536000; includeSubDomains\' always',
