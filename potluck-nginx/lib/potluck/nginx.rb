@@ -15,7 +15,8 @@ module Potluck
     INCLUDE_REGEX = /^ *include +#{Regexp.escape(ACTIVE_CONFIG_PATTERN)} *;/.freeze
 
     def initialize(hosts, port, subdomains: nil, ssl: nil, one_host: false, www: nil, multiple_slashes: nil,
-        multiple_question_marks: nil, trailing_slash: nil, trailing_question_mark: nil, config: {}, **args)
+        multiple_question_marks: nil, trailing_slash: nil, trailing_question_mark: nil, config: {},
+        ensure_host_entries: false, **args)
       super(**args)
 
       @hosts = Array(hosts).map { |h| h.sub(/^www\./, '') }.uniq
@@ -23,6 +24,7 @@ module Potluck
       @host = @hosts.first
       @port = port
 
+      @ensure_host_entries = ensure_host_entries
       @dir = File.join(DIR, @host)
       @ssl = SSL.new(self, @dir, @host, **ssl) if ssl
 
@@ -46,7 +48,7 @@ module Potluck
 
     def start
       @ssl&.ensure_files
-      ensure_host_entries
+      ensure_host_entries if @ensure_host_entries
       ensure_include
 
       write_config
