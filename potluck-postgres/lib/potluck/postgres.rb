@@ -29,7 +29,7 @@ module Potluck
       elsif e.message =~ /database .* does not exist/ && tries == 1
         create_database
         retry
-      elsif (@is_local && tries < 3) && (e.message.include?('could not connect') ||
+      elsif (manage? && tries < 3) && (e.message.include?('could not connect') ||
           e.message.include?('the database system is starting up'))
         sleep(1)
         retry

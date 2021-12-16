@@ -10,14 +10,54 @@ module Potluck
 
     LAUNCHCTL_ERROR_REGEX = /^-|\t[^0]\t/.freeze
 
-    def initialize(logger: nil, is_local: nil)
+    def initialize(logger: nil, manage: launchctl?, is_local: (is_local_omitted = true; nil))
       @logger = logger
+      @manage = !!manage
+
+      if manage.kind_of?(Hash)
+        @status_command = manage[:status]
+        @status_error_regex = manage[:status_error_regex]
+        @start_command = manage[:start]
+        @stop_command = manage[:stop]
+      elsif manage
+        ensure_launchctl!
+      end
+
+      # DEPRECATED. Use `manage` instead.
       @is_local = is_local.nil? ? (IS_MACOS && ensure_launchctl! rescue false) : is_local
+
+      unless is_local_omitted
+        warn("#{self.class}#initialize `is_local` parameter is deprecated and will be removed soon (use "\
+          '`manage` instead)')
+      end
+    end
+
+    def manage?
+      @manage
+    end
+
+    def launchctl?
+      defined?(@@launchctl) ? @@launchctl : (@@launchctl = `which launchctl 2>&1` && $? == 0)
     end
 
     def ensure_launchctl!
-      @@launchctl = `which launchctl` && $? == 0 unless defined?(@@launchctl)
-      @@launchctl || raise("Cannot manage #{self.class.to_s.split('::').last}: launchctl not found")
+      launchctl? || raise("Cannot manage #{self.class.to_s.split('::').last}: launchctl not found")
+    end
+
+    def status_command
+      @status_command || "launchctl list 2>&1 | grep #{SERVICE_PREFIX}#{self.class.service_name}"
+    end
+
+    def status_error_regex
+      @status_error_regex || LAUNCHCTL_ERROR_REGEX
+    end
+
+    def start_command
+      @start_command || "launchctl bootstrap gui/#{Process.uid} #{self.class.plist_path}"
+    end
+
+    def stop_command
+      @stop_command || "launchctl bootout gui/#{Process.uid}/#{self.class.launchctl_name}"
     end
 
     def ensure_plist
@@ -25,13 +65,13 @@ module Potluck
     end
 
     def status
-      return :inactive unless @is_local && ensure_launchctl!
+      return :inactive unless manage?
 
-      output = `launchctl list 2>&1 | grep #{SERVICE_PREFIX}#{self.class.service_name}`
+      output = `#{status_command}`
 
       if $? != 0
         :inactive
-      elsif output[LAUNCHCTL_ERROR_REGEX]
+      elsif status_error_regex && output[status_error_regex]
         :error
       else
         :active
@@ -39,16 +79,16 @@ module Potluck
     end
 
     def start
-      return unless @is_local && ensure_launchctl!
+      return unless manage?
 
-      ensure_plist
+      ensure_plist unless @start_command
 
       case status
       when :error then stop
       when :active then return
       end
 
-      run("launchctl bootstrap gui/#{Process.uid} #{self.class.plist_path}")
+      run(start_command)
       wait { status == :inactive }
 
       raise("Could not start #{self.class.pretty_name}") if status != :active
@@ -57,9 +97,9 @@ module Potluck
     end
 
     def stop
-      return unless @is_local && ensure_launchctl! && status != :inactive
+      return unless manage? && status != :inactive
 
-      run("launchctl bootout gui/#{Process.uid}/#{self.class.launchctl_name}")
+      run(stop_command)
       wait { status != :inactive }
 
       raise("Could not stop #{self.class.pretty_name}") if status != :inactive
@@ -68,7 +108,7 @@ module Potluck
     end
 
     def restart
-      return unless @is_local && ensure_launchctl!
+      return unless manage?
 
       stop
       start

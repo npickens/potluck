@@ -47,6 +47,8 @@ module Potluck
     end
 
     def start
+      return unless manage?
+
       @ssl&.ensure_files
       ensure_host_entries if @ensure_host_entries
       ensure_include
@@ -60,12 +62,16 @@ module Potluck
     end
 
     def stop(hard = false)
+      return unless manage?
+
       deactivate_config
 
       hard || status != :active ? super() : reload
     end
 
     def reload
+      return unless manage?
+
       run('nginx -s reload')
     end
 
