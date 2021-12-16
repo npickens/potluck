@@ -14,9 +14,19 @@ module Potluck
     TEST_CONFIG_REGEX = /nginx: configuration file (?<config>.+) test (failed|is successful)/.freeze
     INCLUDE_REGEX = /^ *include +#{Regexp.escape(ACTIVE_CONFIG_PATTERN)} *;/.freeze
 
+    NON_LAUNCHCTL_COMMANDS = {
+      status: 'ps aux | grep \'[n]ginx: master process\'',
+      start: 'nginx',
+      stop: 'nginx -s stop',
+    }.freeze
+
     def initialize(hosts, port, subdomains: nil, ssl: nil, one_host: false, www: nil, multiple_slashes: nil,
         multiple_question_marks: nil, trailing_slash: nil, trailing_question_mark: nil, config: {},
         ensure_host_entries: false, **args)
+      if args[:manage] && !args[:manage].kind_of?(Hash) && !launchctl?
+        args[:manage] = NON_LAUNCHCTL_COMMANDS
+      end
+
       super(**args)
 
       @hosts = Array(hosts).map { |h| h.sub(/^www\./, '') }.uniq
