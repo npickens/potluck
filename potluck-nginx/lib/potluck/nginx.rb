@@ -129,6 +129,7 @@ module Potluck
               set $r 0;
               set $s $scheme;
               set $h $host;
+              set $port #{@ssl ? '443' : '80'};
               set $p '';
               set $u '';
               set $q '';
@@ -148,7 +149,7 @@ module Potluck
               end}
 
               if ($scheme = #{@other_scheme}) { set $s #{@scheme}; set $r 1; }
-              if ($http_host ~ :[0-9]+$) { set $p :#{@ssl ? '4433' : '8080'}; }
+              if ($http_host ~ :([0-9]+)$) { set $p :$1; set $port $1; }
               if ($request_uri ~ ^([^\\?]+)(\\?+.*)?$) { set $u $1; set $q $2; }
 
               #{'if ($u ~ //) { set $u $uri; set $r 1; }' if @multiple_slashes == false}
@@ -175,11 +176,11 @@ module Potluck
             'proxy_redirect' => 'off',
             'proxy_set_header' => {
               repeat: true,
-              'Host' => @host,
+              'Host' => '$http_host',
               'X-Real-IP' => '$remote_addr',
               'X-Forwarded-For' => '$proxy_add_x_forwarded_for',
               'X-Forwarded-Proto' => @ssl ? 'https' : 'http',
-              'X-Forwarded-Port' => @ssl ? '443' : '80',
+              'X-Forwarded-Port' => '$port',
             },
           },
         ),
