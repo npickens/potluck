@@ -111,7 +111,8 @@ module Potluck
           'server_name' => (@hosts + @subdomains).join(' '),
 
           'gzip' => 'on',
-          'gzip_types' => 'application/javascript application/json text/css text/plain',
+          'gzip_types' => 'application/javascript application/json application/xml text/css '\
+            'text/javascript text/plain',
 
           'add_header' => {
             repeat: true,
