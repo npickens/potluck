@@ -116,10 +116,10 @@ module Potluck
 
           'add_header' => {
             repeat: true,
-            'Referrer-Policy' => 'same-origin',
-            'X-Frame-Options' => 'DENY',
-            'X-XSS-Protection' => '\'1; mode=block\'',
-            'X-Content-Type-Options' => 'nosniff',
+            'Referrer-Policy' => '\'same-origin\' always',
+            'X-Frame-Options' => '\'DENY\' always',
+            'X-XSS-Protection' => '\'1; mode=block\' always',
+            'X-Content-Type-Options' => '\'nosniff\' always',
           },
         }, @ssl ? @ssl.config : {}).merge!(
           'location /' => {
