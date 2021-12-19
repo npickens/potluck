@@ -5,6 +5,15 @@ require('sequel')
 
 module Potluck
   class Postgres < Dish
+    ROLE_NOT_FOUND_REGEX = /role .* does not exist/.freeze
+    DATABASE_NOT_FOUND_REGEX = /database .* does not exist/.freeze
+
+    STARTING_UP_STRING = 'the database system is starting up'
+    STARTING_UP_TIMEOUT = 30
+
+    CONNECTION_REFUSED_STRING = 'connection refused'
+    CONNECTION_REFUSED_TIMEOUT = 3
+
     attr_reader(:database)
 
     def initialize(config, **args)
@@ -22,18 +31,22 @@ module Potluck
         Sequel.synchronize { Sequel::DATABASES.delete(dud) }
       end
 
-      if e.message =~ /role .* does not exist/ && tries == 1
+      message = e.message.downcase
+
+      if message =~ ROLE_NOT_FOUND_REGEX && tries == 1
         create_database_role
         create_database
         retry
-      elsif e.message =~ /database .* does not exist/ && tries == 1
+      elsif message =~ DATABASE_NOT_FOUND_REGEX && tries == 1
         create_database
         retry
-      elsif (manage? && tries < 3) && (e.message.include?('could not connect') ||
-          e.message.include?('the database system is starting up'))
+      elsif message.include?(STARTING_UP_STRING) && tries < STARTING_UP_TIMEOUT
         sleep(1)
         retry
-      elsif e.message.include?('could not connect')
+      elsif message.include?(CONNECTION_REFUSED_STRING) && tries < CONNECTION_REFUSED_TIMEOUT && manage?
+        sleep(1)
+        retry
+      elsif message.include?(CONNECTION_REFUSED_STRING)
         abort("#{e.class}: #{e.message.strip}")
       else
         abort("#{e.class}: #{e.message.strip}\n  #{e.backtrace.join("\n  ")}")
