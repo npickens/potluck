@@ -4,7 +4,7 @@ require('potluck')
 require('sequel')
 
 module Potluck
-  class Postgres < Dish
+  class Postgres < Service
     ROLE_NOT_FOUND_REGEX = /role .* does not exist/.freeze
     DATABASE_NOT_FOUND_REGEX = /database .* does not exist/.freeze
 

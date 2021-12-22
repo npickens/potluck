@@ -6,7 +6,7 @@ require_relative('nginx/ssl')
 require_relative('nginx/util')
 
 module Potluck
-  class Nginx < Dish
+  class Nginx < Service
     CONFIG_NAME_ACTIVE = 'nginx.conf'
     CONFIG_NAME_INACTIVE = 'nginx-stopped.conf'
     ACTIVE_CONFIG_PATTERN = File.join(DIR, '*', CONFIG_NAME_ACTIVE).freeze

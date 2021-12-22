@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
 module Potluck
-  class Dish
+  class Service
     SERVICE_PREFIX = 'potluck.npickens.'
 
     PLIST_XML = '<?xml version="1.0" encoding="UTF-8"?>'
@@ -177,6 +177,15 @@ module Potluck
         </dict>
         </plist>
       EOS
+    end
+  end
+
+  Dish = Service.clone
+
+  class Dish
+    def self.inherited(subclass)
+      warn("Potluck::Dish has been renamed to Potluck::Service. Please update #{subclass} to inherit from "\
+        'Potluck::Service instead of Potluck::Dish.')
     end
   end
 end

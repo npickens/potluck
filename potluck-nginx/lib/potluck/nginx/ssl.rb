@@ -3,7 +3,7 @@
 require('time')
 
 module Potluck
-  class Nginx < Dish
+  class Nginx < Service
     class SSL
       # Reference: https://ssl-config.mozilla.org/#server=nginx&config=intermediate&guideline=5.6
       DEFAULT_CONFIG = {
