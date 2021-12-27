@@ -2,7 +2,8 @@
 
 module Potluck
   ##
-  # Provides a Ruby interface for controlling and configuring system services.
+  # A Ruby interface for controlling, configuring, and interacting with external processes. Serves as a
+  # parent class for service-specific child classes.
   #
   class Service
     SERVICE_PREFIX = 'potluck.npickens.'
@@ -35,7 +36,7 @@ module Potluck
         ensure_launchctl!
       end
 
-      # DEPRECATED. Use `manage` instead.
+      # DEPRECATED. Use +manage+ instead.
       @is_local = is_local.nil? ? (IS_MACOS && ensure_launchctl! rescue false) : is_local
 
       unless is_local_omitted
@@ -171,7 +172,7 @@ module Potluck
     # Runs a command with the default shell. Raises an error if the command exits with a non-zero status.
     #
     # * +command+ - Command to run.
-    # * +redirect_stderr* - True if stderr should be redirected to stdout; otherwise stderr output will not
+    # * +redirect_stderr+ - True if stderr should be redirected to stdout; otherwise stderr output will not
     #   be logged (default: true).
     #
     def run(command, redirect_stderr: true)
@@ -240,14 +241,14 @@ module Potluck
     end
 
     ##
-    # Path to the launchctl plist of the service.
+    # Path to the launchctl plist file of the service.
     #
     def self.plist_path
       File.join(DIR, "#{launchctl_name}.plist")
     end
 
     ##
-    # Content of the launchctl plist.
+    # Content of the launchctl plist file.
     #
     def self.plist(content)
       <<~EOS
