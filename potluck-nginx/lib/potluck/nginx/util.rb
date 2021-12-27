@@ -2,7 +2,35 @@
 
 module Potluck
   class Nginx
+    ##
+    # Utility methods for Nginx class.
+    #
     class Util
+      ##
+      # Merges one or more other hashes into a hash by merging nested hashes rather than overwriting them as
+      # is the case with <tt>Hash#merge!</tt>.
+      #
+      # * +hashes+ - Hashes to deep merge. The first one will be modified with the result of the merge.
+      # * +arrays+ - True if arrays should be merged rather than overwritten (optional, default: false).
+      #
+      # Example:
+      #
+      #   h1 = {hello: {item1: 'world'}}
+      #   h2 = {hello: {item2: 'friend'}}
+      #
+      #   Util.deep_merge!(h1, h2)
+      #   # => {hello: {item1: 'world', item2: 'friend'}}
+      #
+      # By default, only hashes are merged and arrays are still overwritten as they are with
+      # <tt>Hash#merge!</tt>. But passing <tt>arrays: true</tt> will result in arrays being merged similarly
+      # to hashes. Example:
+      #
+      #   h1 = {hello: {item1: ['world']}}
+      #   h2 = {hello: {item1: ['friend']}}
+      #
+      #   Util.deep_merge!(h1, h2, arrays: true)
+      #   # => {hello: {item1: ['world', 'friend']}}
+      #
       def self.deep_merge!(*hashes, arrays: false)
         hash = hashes[0]
 
