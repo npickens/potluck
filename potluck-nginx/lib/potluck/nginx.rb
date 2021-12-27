@@ -82,7 +82,6 @@ module Potluck
       @trailing_question_mark = trailing_question_mark
       @additional_config = config
 
-      FileUtils.mkdir_p(DIR)
       FileUtils.mkdir_p(@dir)
 
       @config_file_active = File.join(@dir, CONFIG_NAME_ACTIVE).freeze
