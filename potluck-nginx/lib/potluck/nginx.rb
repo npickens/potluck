@@ -131,6 +131,13 @@ module Potluck
       run('nginx -s reload')
     end
 
+    ##
+    # Returns the content for the Nginx configuration file as a string.
+    #
+    def config_file_content
+      self.class.to_nginx_config(config)
+    end
+
     private
 
     ##
@@ -247,7 +254,7 @@ module Potluck
     #
     def write_config
       File.open(@config_file_inactive, 'w') do |file|
-        file.write(self.class.to_nginx_config(config))
+        file.write(config_file_content)
       end
     end
 
