@@ -262,17 +262,4 @@ module Potluck
       EOS
     end
   end
-
-  ##
-  # DEPRECATED. Old name of Potluck::Service class.
-  #
-  Dish = Service.clone
-
-  # :nodoc: all
-  class Dish
-    def self.inherited(subclass)
-      warn("Potluck::Dish has been renamed to Potluck::Service. Please update #{subclass} to inherit from "\
-        'Potluck::Service instead of Potluck::Dish.')
-    end
-  end
 end
