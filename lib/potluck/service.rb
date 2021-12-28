@@ -23,9 +23,8 @@ module Potluck
     #   be sent to stdout and stderr if none is supplied.
     # * +manage+ - True if the service runs locally and should be managed by this process (default: true if
     #   launchctl is available and false otherwise).
-    # * +is_local+ - DEPRECATED. True if the service runs locally (use +manage+ instead).
     #
-    def initialize(logger: nil, manage: launchctl?, is_local: (is_local_omitted = true; nil))
+    def initialize(logger: nil, manage: launchctl?)
       @logger = logger
       @manage = !!manage
 
@@ -36,14 +35,6 @@ module Potluck
         @stop_command = manage[:stop]
       elsif manage
         ensure_launchctl!
-      end
-
-      # DEPRECATED. Use +manage+ instead.
-      @is_local = is_local.nil? ? (IS_MACOS && ensure_launchctl! rescue false) : is_local
-
-      unless is_local_omitted
-        warn("#{self.class}#initialize `is_local` parameter is deprecated and will be removed soon (use "\
-          '`manage` instead)')
       end
     end
 
