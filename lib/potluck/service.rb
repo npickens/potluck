@@ -4,7 +4,7 @@ require('fileutils')
 
 module Potluck
   ##
-  # A Ruby interface for controlling, configuring, and interacting with external processes. Serves as a
+  # A Ruby interface for configuring, controlling, and interacting with external processes. Serves as a
   # parent class for service-specific child classes.
   #
   class Service
