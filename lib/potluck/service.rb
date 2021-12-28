@@ -1,5 +1,7 @@
 # frozen_string_literal: true
 
+require('fileutils')
+
 module Potluck
   ##
   # A Ruby interface for controlling, configuring, and interacting with external processes. Serves as a
@@ -99,6 +101,7 @@ module Potluck
     # Writes the service's launchctl plist file to disk.
     #
     def ensure_plist
+      FileUtils.mkdir_p(File.dirname(self.class.plist_path))
       File.write(self.class.plist_path, self.class.plist)
     end
 
