@@ -4,4 +4,5 @@ require_relative('potluck/service')
 
 module Potluck
   DIR = File.expand_path(File.join(ENV['HOME'], '.potluck')).freeze
+  IS_MACOS = !!RUBY_PLATFORM[/darwin/]
 end
