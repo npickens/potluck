@@ -4,6 +4,11 @@ require('fileutils')
 
 module Potluck
   ##
+  # General error class used for errors encountered with a service.
+  #
+  class ServiceError < StandardError; end
+
+  ##
   # A Ruby interface for configuring, controlling, and interacting with external processes. Serves as a
   # parent class for service-specific child classes.
   #
@@ -56,7 +61,7 @@ module Potluck
     # Checks if launchctl is available and raises an error if not.
     #
     def ensure_launchctl!
-      launchctl? || raise("Cannot manage #{self.class.to_s.split('::').last}: launchctl not found")
+      launchctl? || raise(ServiceError.new("Cannot manage #{self.pretty_name}: launchctl not found"))
     end
 
     ##
@@ -133,7 +138,7 @@ module Potluck
       run(start_command)
       wait { status == :inactive }
 
-      raise("Could not start #{self.class.pretty_name}") if status != :active
+      raise(ServiceError.new("Could not start #{self.class.pretty_name}")) if status != :active
 
       log("#{self.class.pretty_name} started")
     end
@@ -147,7 +152,7 @@ module Potluck
       run(stop_command)
       wait { status != :inactive }
 
-      raise("Could not stop #{self.class.pretty_name}") if status != :inactive
+      raise(ServiceError.new("Could not stop #{self.class.pretty_name}")) if status != :inactive
 
       log("#{self.class.pretty_name} stopped")
     end
@@ -175,7 +180,7 @@ module Potluck
 
       if status != 0
         output.split("\n").each { |line| log(line, :error) }
-        raise("Command exited with status #{status.to_i}: #{command}")
+        raise(ServiceError.new("Command exited with status #{status.to_i}: #{command}"))
       else
         output
       end
