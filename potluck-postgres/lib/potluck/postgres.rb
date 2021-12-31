@@ -97,7 +97,7 @@ module Potluck
 
       # Suppress Sequel schema migration table queries.
       original_level = @logger.level
-      @logger.level = Logger::WARN
+      @logger.level = Logger::WARN if @logger.level == Logger::INFO
 
       args = [Sequel::Model.db, dir, {allow_missing_migration_files: true}]
       migrator = Sequel::TimestampMigrator.new(*args)
@@ -120,6 +120,8 @@ module Potluck
       migrator = Sequel::TimestampMigrator.new(*args)
       @logger.level = original_level
       migrator.run
+    ensure
+      @logger.level = original_level if original_level
     end
 
     private
