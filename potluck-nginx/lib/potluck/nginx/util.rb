@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
 module Potluck
-  class Nginx
+  class Nginx < Service
     ##
     # Utility methods for Nginx class.
     #
