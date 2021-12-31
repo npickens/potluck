@@ -58,13 +58,13 @@ module Potluck
         @key_file = key_file || File.join(@dir, "#{@host}.key").freeze
         @dhparam_file = dhparam_file || File.join(@dir, 'dhparam.pem').freeze
 
-        @config = {
+        @config = Util.deep_merge({
           'ssl_certificate' => @crt_file,
           'ssl_certificate_key' => @key_file,
           'ssl_dhparam' => @dhparam_file,
           'ssl_stapling' => ('on' unless @auto_generated),
           'ssl_stapling_verify' => ('on' unless @auto_generated),
-        }.merge!(DEFAULT_CONFIG).merge!(config)
+        }, DEFAULT_CONFIG, config)
       end
 
       ##
