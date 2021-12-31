@@ -32,7 +32,7 @@ gem install potluck
 ## Usage
 
 The core Potluck gem is not meant to be used directly. Rather its `Service` class defines a common interface
-for external processes which can be inherited by service-specific child classes. See the
+for external processes which can be inherited by service-specific child classes. See
 [Potluck::Nginx](potluck-nginx/README.md) and [Potluck::Postgres](potluck-postgres/README.md) for examples.
 
 ## Contributing
