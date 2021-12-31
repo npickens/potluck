@@ -4,9 +4,18 @@ require('potluck')
 require('sequel')
 
 module Potluck
+  ##
+  # Error class used to wrap errors encountered while connecting to or setting up a database.
+  #
   class PostgresError < ServiceError
     attr_reader(:wrapped_error)
 
+    ##
+    # Creates a new instance.
+    #
+    # * +message+ - Error message.
+    # * +wrapped_error+ - Original error that was rescued and is being wrapped by this one (optional).
+    #
     def initialize(message, wrapped_error = nil)
       super(message)
 
@@ -14,6 +23,11 @@ module Potluck
     end
   end
 
+  ##
+  # A Ruby interface for controlling and connecting to Postgres. Uses
+  # [Sequel](https://github.com/jeremyevans/sequel) to connect and perform automatic role and database
+  # creation, as well as for utility methods such as database schema migration.
+  #
   class Postgres < Service
     ROLE_NOT_FOUND_REGEX = /role .* does not exist/.freeze
     DATABASE_NOT_FOUND_REGEX = /database .* does not exist/.freeze
@@ -26,17 +40,29 @@ module Potluck
 
     attr_reader(:database)
 
+    ##
+    # Creates a new instance.
+    #
+    # * +config+ - Configuration hash to pass to <tt>Sequel.connect</tt>.
+    # * +args+ - Arguments to pass to Potluck::Service.new (optional).
+    #
     def initialize(config, **args)
       super(**args)
 
       @config = config
     end
 
+    ##
+    # Disconnects and stops the Postgres process.
+    #
     def stop
       disconnect
       super
     end
 
+    ##
+    # Connects to the configured Postgres database.
+    #
     def connect
       (tries ||= 0) && (tries += 1)
       @database = Sequel.connect(@config, logger: @logger)
@@ -68,10 +94,21 @@ module Potluck
       end
     end
 
+    ##
+    # Disconnects from the database if a connection was made.
+    #
     def disconnect
       @database&.disconnect
     end
 
+    ##
+    # Runs database migrations by way of Sequel's migration extension. Migration files must use the
+    # timestamp naming strategy as opposed to integers.
+    #
+    # * +dir+ - Directory where migration files are located.
+    # * +steps+ - Number of steps forward or backward to migrate from the current migration, otherwise will
+    #   migrate to latest (optional).
+    #
     def migrate(dir, steps = nil)
       return unless File.directory?(dir)
 
@@ -108,6 +145,10 @@ module Potluck
 
     private
 
+    ##
+    # Attempts to connect to the 'postgres' database as the system user with no password and create the
+    # configured role. Useful in development.
+    #
     def create_database_role
       tmp_config = @config.dup
       tmp_config[:database] = 'postgres'
@@ -125,6 +166,10 @@ module Potluck
       end
     end
 
+    ##
+    # Attempts to connect to the 'postgres' database with the configured user and password and create the
+    # configured database. Useful in development.
+    #
     def create_database
       tmp_config = @config.dup
       tmp_config[:database] = 'postgres'
@@ -140,6 +185,9 @@ module Potluck
       end
     end
 
+    ##
+    # Content of the launchctl plist file.
+    #
     def self.plist
       super(
         <<~EOS
