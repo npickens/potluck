@@ -143,7 +143,7 @@ module Potluck
     ##
     # Returns a hash representation of the Nginx configuration file content. Any configuration passed to
     # Nginx.new is deep-merged into a base configuration hash, meaning nested hashes are merged rather than
-    # overwritten (see Util.deep_merge!).
+    # overwritten (see Util.deep_merge).
     #
     def config
       host_subdomains_regex = ([@host] + @subdomains).join('|')
@@ -154,97 +154,103 @@ module Potluck
           'server' => "127.0.0.1:#{@port}",
         },
 
-        'server' => Util.deep_merge!({
-          'charset' => 'UTF-8',
-          'access_log' => File.join(@dir, 'nginx-access.log'),
-          'error_log' => File.join(@dir, 'nginx-error.log'),
+        'server' => Util.deep_merge(
+          {
+            'charset' => 'UTF-8',
+            'access_log' => File.join(@dir, 'nginx-access.log'),
+            'error_log' => File.join(@dir, 'nginx-error.log'),
 
-          'listen' => {
-            repeat: true,
-            '8080' => true,
-            '[::]:8080' => true,
-            '4433 ssl http2' => @ssl ? true : nil,
-            '[::]:4433 ssl http2' => @ssl ? true : nil,
-          },
-          'server_name' => (@hosts + @subdomains).join(' '),
-
-          'gzip' => 'on',
-          'gzip_types' => 'application/javascript application/json application/xml text/css '\
-            'text/javascript text/plain',
-
-          'add_header' => {
-            repeat: true,
-            'Referrer-Policy' => '\'same-origin\' always',
-            'X-Frame-Options' => '\'DENY\' always',
-            'X-XSS-Protection' => '\'1; mode=block\' always',
-            'X-Content-Type-Options' => '\'nosniff\' always',
-          },
-        }, @ssl ? @ssl.config : {}).merge!(
-          'location /' => {
-            raw: """
-              if ($host !~ ^#{hosts_subdomains_regex}$) { return 404; }
-
-              set $r 0;
-              set $s $scheme;
-              set $h $host;
-              set $port #{@ssl ? '443' : '80'};
-              set $p '';
-              set $u '';
-              set $q '';
-
-              #{if @www.nil? && @one_host == false
-                nil
-              elsif @www.nil? && @one_host == true
-                "if ($host !~ ^(www.)?#{host_subdomains_regex}$) { set $h $1#{@host}; set $r 1; }"
-              elsif @www == false && @one_host == false
-                "if ($host ~ ^www.(.+)$) { set $h $1; set $r 1; }"
-              elsif @www == false && @one_host == true
-                "if ($host !~ ^#{host_subdomains_regex}$) { set $h #{@host}; set $r 1; }"
-              elsif @www == true && @one_host == false
-                "if ($host !~ ^www.(.+)$) { set $h $1; set $r 1; }"
-              elsif @www == true && @one_host == true
-                "if ($host !~ ^www.#{host_subdomains_regex}$) { set $h www.#{@host}; set $r 1; }"
-              end}
-
-              if ($scheme = #{@other_scheme}) { set $s #{@scheme}; set $r 1; }
-              if ($http_host ~ :([0-9]+)$) { set $p :$1; set $port $1; }
-              if ($request_uri ~ ^([^\\?]+)(\\?+.*)?$) { set $u $1; set $q $2; }
-
-              #{'if ($u ~ //) { set $u $uri; set $r 1; }' if @multiple_slashes == false}
-              #{'if ($q ~ ^\?\?+(.*)$) { set $q ?$1; set $r 1; }' if @multiple_question_marks == false}
-
-              #{if @trailing_question_mark == false
-                'if ($q ~ \?+$) { set $q \'\'; set $r 1; }'
-              elsif @trailing_question_mark == true
-                'if ($q !~ .) { set $q ?; set $r 1; }'
-              end}
-              #{if @trailing_slash == false
-                'if ($u ~ (.+?)/+$) { set $u $1; set $r 1; }'
-              elsif @trailing_slash == true
-                'if ($u ~ [^/]$) { set $u $u/; set $r 1; }'
-              end}
-
-              set $mr $request_method$r;
-
-              if ($mr ~ ^(GET|HEAD)1$) { return 301 $s://$h$p$u$q; }
-              if ($mr ~ 1$) { return 308 $s://$h$p$u$q; }
-            """.strip.gsub(/^ +/, '').gsub(/\n{3,}/, "\n\n"),
-
-            'proxy_pass' => "http://#{@host}",
-            'proxy_redirect' => 'off',
-            'proxy_set_header' => {
+            'listen' => {
               repeat: true,
-              'Host' => '$http_host',
-              'X-Real-IP' => '$remote_addr',
-              'X-Forwarded-For' => '$proxy_add_x_forwarded_for',
-              'X-Forwarded-Proto' => @ssl ? 'https' : 'http',
-              'X-Forwarded-Port' => '$port',
+              '8080' => true,
+              '[::]:8080' => true,
+              '4433 ssl http2' => @ssl ? true : nil,
+              '[::]:4433 ssl http2' => @ssl ? true : nil,
+            },
+            'server_name' => (@hosts + @subdomains).join(' '),
+
+            'gzip' => 'on',
+            'gzip_types' => 'application/javascript application/json application/xml text/css '\
+              'text/javascript text/plain',
+
+            'add_header' => {
+              repeat: true,
+              'Referrer-Policy' => '\'same-origin\' always',
+              'X-Frame-Options' => '\'DENY\' always',
+              'X-XSS-Protection' => '\'1; mode=block\' always',
+              'X-Content-Type-Options' => '\'nosniff\' always',
             },
           },
-        ),
-      }
 
-      Util.deep_merge!(config['server'], @additional_config)
+          @ssl ? @ssl.config : {},
+
+          {
+            'location /' => {
+              raw: """
+                if ($host !~ ^#{hosts_subdomains_regex}$) { return 404; }
+
+                set $r 0;
+                set $s $scheme;
+                set $h $host;
+                set $port #{@ssl ? '443' : '80'};
+                set $p '';
+                set $u '';
+                set $q '';
+
+                #{if @www.nil? && @one_host == false
+                  nil
+                elsif @www.nil? && @one_host == true
+                  "if ($host !~ ^(www.)?#{host_subdomains_regex}$) { set $h $1#{@host}; set $r 1; }"
+                elsif @www == false && @one_host == false
+                  "if ($host ~ ^www.(.+)$) { set $h $1; set $r 1; }"
+                elsif @www == false && @one_host == true
+                  "if ($host !~ ^#{host_subdomains_regex}$) { set $h #{@host}; set $r 1; }"
+                elsif @www == true && @one_host == false
+                  "if ($host !~ ^www.(.+)$) { set $h $1; set $r 1; }"
+                elsif @www == true && @one_host == true
+                  "if ($host !~ ^www.#{host_subdomains_regex}$) { set $h www.#{@host}; set $r 1; }"
+                end}
+
+                if ($scheme = #{@other_scheme}) { set $s #{@scheme}; set $r 1; }
+                if ($http_host ~ :([0-9]+)$) { set $p :$1; set $port $1; }
+                if ($request_uri ~ ^([^\\?]+)(\\?+.*)?$) { set $u $1; set $q $2; }
+
+                #{'if ($u ~ //) { set $u $uri; set $r 1; }' if @multiple_slashes == false}
+                #{'if ($q ~ ^\?\?+(.*)$) { set $q ?$1; set $r 1; }' if @multiple_question_marks == false}
+
+                #{if @trailing_question_mark == false
+                  'if ($q ~ \?+$) { set $q \'\'; set $r 1; }'
+                elsif @trailing_question_mark == true
+                  'if ($q !~ .) { set $q ?; set $r 1; }'
+                end}
+                #{if @trailing_slash == false
+                  'if ($u ~ (.+?)/+$) { set $u $1; set $r 1; }'
+                elsif @trailing_slash == true
+                  'if ($u ~ [^/]$) { set $u $u/; set $r 1; }'
+                end}
+
+                set $mr $request_method$r;
+
+                if ($mr ~ ^(GET|HEAD)1$) { return 301 $s://$h$p$u$q; }
+                if ($mr ~ 1$) { return 308 $s://$h$p$u$q; }
+              """.strip.gsub(/^ +/, '').gsub(/\n{3,}/, "\n\n"),
+
+              'proxy_pass' => "http://#{@host}",
+              'proxy_redirect' => 'off',
+              'proxy_set_header' => {
+                repeat: true,
+                'Host' => '$http_host',
+                'X-Real-IP' => '$remote_addr',
+                'X-Forwarded-For' => '$proxy_add_x_forwarded_for',
+                'X-Forwarded-Proto' => @ssl ? 'https' : 'http',
+                'X-Forwarded-Port' => '$port',
+              },
+            },
+          },
+
+          @additional_config,
+        )
+      }
 
       config
     end
