@@ -4,6 +4,16 @@ require('potluck')
 require('sequel')
 
 module Potluck
+  class PostgresError < ServiceError
+    attr_reader(:wrapped_error)
+
+    def initialize(message, wrapped_error = nil)
+      super(message)
+
+      @wrapped_error = wrapped_error
+    end
+  end
+
   class Postgres < Service
     ROLE_NOT_FOUND_REGEX = /role .* does not exist/.freeze
     DATABASE_NOT_FOUND_REGEX = /database .* does not exist/.freeze
@@ -52,9 +62,9 @@ module Potluck
         sleep(1)
         retry
       elsif message.include?(CONNECTION_REFUSED_STRING)
-        abort("#{e.class}: #{e.message.strip}")
+        raise(PostgresError.new(e.message.strip, e))
       else
-        abort("#{e.class}: #{e.message.strip}\n  #{e.backtrace.join("\n  ")}")
+        raise
       end
     end
 
@@ -74,9 +84,8 @@ module Potluck
             "'#{@config[:password]}'")
         end
       rescue => e
-        @logger.error("#{e.class}: #{e.message.strip}\n  #{e.backtrace.join("\n  ")}\n")
-        abort("Could not create role '#{@config[:username]}'. Make sure database user '#{ENV['USER']}' "\
-          'has permission to do so, or create it manually.')
+        raise(PostgresError.new("Database role #{@config[:username].inspect} could not be created using "\
+          "system user #{tmp_config[:username].inspect}. Please create the role manually.", e))
       end
     end
 
@@ -89,9 +98,9 @@ module Potluck
           database.execute("CREATE DATABASE #{@config[:database]}")
         end
       rescue => e
-        @logger.error("#{e.class}: #{e.message.strip}\n  #{e.backtrace.join("\n  ")}\n")
-        abort("Could not create database '#{@config[:database]}'. Make sure database user "\
-          "'#{@config[:username]}' has permission to do so, or create it manually.")
+        raise(PostgresError.new("Database #{@config[:database].inspect} could not be created by "\
+          "connecting to system database #{tmp_config[:database].inspect}. Please create the database "\
+          'manually.', e))
       end
     end
 
