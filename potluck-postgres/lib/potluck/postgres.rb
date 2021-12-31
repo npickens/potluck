@@ -72,38 +72,6 @@ module Potluck
       @database&.disconnect
     end
 
-    def create_database_role
-      tmp_config = @config.dup
-      tmp_config[:database] = 'postgres'
-      tmp_config[:username] = ENV['USER']
-      tmp_config[:password] = nil
-
-      begin
-        Sequel.connect(tmp_config, logger: @logger) do |database|
-          database.execute("CREATE ROLE #{@config[:username]} WITH LOGIN CREATEDB REPLICATION PASSWORD "\
-            "'#{@config[:password]}'")
-        end
-      rescue => e
-        raise(PostgresError.new("Database role #{@config[:username].inspect} could not be created using "\
-          "system user #{tmp_config[:username].inspect}. Please create the role manually.", e))
-      end
-    end
-
-    def create_database
-      tmp_config = @config.dup
-      tmp_config[:database] = 'postgres'
-
-      begin
-        Sequel.connect(tmp_config, logger: @logger) do |database|
-          database.execute("CREATE DATABASE #{@config[:database]}")
-        end
-      rescue => e
-        raise(PostgresError.new("Database #{@config[:database].inspect} could not be created by "\
-          "connecting to system database #{tmp_config[:database].inspect}. Please create the database "\
-          'manually.', e))
-      end
-    end
-
     def migrate(dir, steps = nil)
       return unless File.directory?(dir)
 
@@ -139,6 +107,38 @@ module Potluck
     end
 
     private
+
+    def create_database_role
+      tmp_config = @config.dup
+      tmp_config[:database] = 'postgres'
+      tmp_config[:username] = ENV['USER']
+      tmp_config[:password] = nil
+
+      begin
+        Sequel.connect(tmp_config, logger: @logger) do |database|
+          database.execute("CREATE ROLE #{@config[:username]} WITH LOGIN CREATEDB REPLICATION PASSWORD "\
+            "'#{@config[:password]}'")
+        end
+      rescue => e
+        raise(PostgresError.new("Database role #{@config[:username].inspect} could not be created using "\
+          "system user #{tmp_config[:username].inspect}. Please create the role manually.", e))
+      end
+    end
+
+    def create_database
+      tmp_config = @config.dup
+      tmp_config[:database] = 'postgres'
+
+      begin
+        Sequel.connect(tmp_config, logger: @logger) do |database|
+          database.execute("CREATE DATABASE #{@config[:database]}")
+        end
+      rescue => e
+        raise(PostgresError.new("Database #{@config[:database].inspect} could not be created by "\
+          "connecting to system database #{tmp_config[:database].inspect}. Please create the database "\
+          'manually.', e))
+      end
+    end
 
     def self.plist
       super(
