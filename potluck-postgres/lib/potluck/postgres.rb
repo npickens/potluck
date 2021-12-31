@@ -22,6 +22,11 @@ module Potluck
       @config = config
     end
 
+    def stop
+      disconnect
+      super
+    end
+
     def connect
       (tries ||= 0) && (tries += 1)
       @database = Sequel.connect(@config, logger: @logger)
