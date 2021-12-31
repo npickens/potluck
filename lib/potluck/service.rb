@@ -14,11 +14,6 @@ module Potluck
   #
   class Service
     SERVICE_PREFIX = 'potluck.npickens.'
-
-    PLIST_XML = '<?xml version="1.0" encoding="UTF-8"?>'
-    PLIST_DOCTYPE = '<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/Prope'\
-      'rtyList-1.0.dtd">'
-
     LAUNCHCTL_ERROR_REGEX = /^-|\t[^0]\t/.freeze
 
     ##
@@ -251,8 +246,9 @@ module Potluck
     #
     def self.plist(content)
       <<~EOS
-        #{PLIST_XML}
-        #{PLIST_DOCTYPE}
+        <?xml version="1.0" encoding="UTF-8"?>
+        #{'<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.'\
+          '0.dtd">'}
         <plist version="1.0">
         <dict>
           <key>Label</key>
