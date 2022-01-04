@@ -56,7 +56,7 @@ module Potluck
     # Checks if launchctl is available and raises an error if not.
     #
     def ensure_launchctl!
-      launchctl? || raise(ServiceError.new("Cannot manage #{self.pretty_name}: launchctl not found"))
+      launchctl? || raise(ServiceError.new("Cannot manage #{self.class.pretty_name}: launchctl not found"))
     end
 
     ##
