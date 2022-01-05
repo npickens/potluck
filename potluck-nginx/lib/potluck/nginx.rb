@@ -138,6 +138,98 @@ module Potluck
       self.class.to_nginx_config(config)
     end
 
+    ##
+    # Content of the launchctl plist file.
+    #
+    def self.plist
+      super(
+        <<~EOS
+          <key>ProgramArguments</key>
+          <array>
+            <string>/usr/local/opt/nginx/bin/nginx</string>
+            <string>-g</string>
+            <string>daemon off;</string>
+          </array>
+          <key>StandardOutPath</key>
+          <string>/usr/local/var/log/nginx/access.log</string>
+          <key>StandardErrorPath</key>
+          <string>/usr/local/var/log/nginx/error.log</string>
+        EOS
+      )
+    end
+
+    ##
+    # Converts a hash to an Nginx configuration file content string. Keys should be strings and values
+    # either strings or hashes. A +nil+ value in a hash will result in that key-value pair being omitted.
+    #
+    # * +hash+ - Hash to convert to the string content of an Nginx configuration file.
+    # * +indent+ - Number of spaces to indent; used when the method is called recursively and should not be
+    #   set explicitly (optional, default: 0).
+    # * +repeat+ - Value to prepend to each entry of the hash; used when the method is called recursively
+    #   and should not be set explicitly (optional).
+    #
+    # Symbol keys in hashes are used as special directives. Including <tt>repeat: true</tt> will cause the
+    # parent hash's key for the child hash to be prefixed to each line of the output. Example:
+    #
+    #   {
+    #     # ...
+    #
+    #     'add_header' => {
+    #       repeat: true,
+    #       'X-Frame-Options' => 'DENY',
+    #       'X-Content-Type-Options' => 'nosniff',
+    #     }
+    #   }
+    #
+    # Result:
+    #
+    #   # ...
+    #
+    #   add_header X-Frame-Options DENY;
+    #   add_header X-Content-Type-Options nosniff;
+    #
+    # A hash containing <tt>raw: '...'</tt> can be used to include a raw chunk of text rather than key-value
+    # pairs. Example:
+    #
+    #   {
+    #     # ...
+    #
+    #     'location /' => {
+    #       raw: """
+    #         if ($scheme = https) { ... }
+    #         if ($host ~ ^www.) { ... }
+    #       """,
+    #     }
+    #   }
+    #
+    # Result:
+    #
+    #   location / {
+    #     if ($scheme = https) { ... }
+    #     if ($host ~ ^www.) { ... }
+    #   }
+    #
+    def self.to_nginx_config(hash, indent: 0, repeat: nil)
+      hash.each_with_object(+'') do |(k, v), config|
+        next if v.nil?
+        next if k == :repeat
+
+        config << (
+          if v.kind_of?(Hash)
+            if v[:repeat]
+              to_nginx_config(v, indent: indent, repeat: k)
+            else
+              "#{' ' * indent}#{k} {\n#{to_nginx_config(v, indent: indent + 2)}#{' ' * indent}}\n"
+            end
+          elsif k == :raw
+            "#{v.gsub(/^(?=.)/, ' ' * indent)}\n\n"
+          else
+            "#{' ' * indent}#{"#{repeat} " if repeat}#{k}#{" #{v}" unless v == true};\n"
+          end
+        )
+      end
+    end
+
     private
 
     ##
@@ -314,98 +406,6 @@ module Potluck
         File.write(config_file, config_content.sub(/^( *http *{)( *\n?)( *)/,
           "\\1\\2\\3include #{ACTIVE_CONFIG_PATTERN};\n\n\\3"))
       end
-    end
-
-    ##
-    # Converts a hash to an Nginx configuration file content string. Keys should be strings and values
-    # either strings or hashes. A +nil+ value in a hash will result in that key-value pair being omitted.
-    #
-    # * +hash+ - Hash to convert to the string content of an Nginx configuration file.
-    # * +indent+ - Number of spaces to indent; used when the method is called recursively and should not be
-    #   set explicitly (optional, default: 0).
-    # * +repeat+ - Value to prepend to each entry of the hash; used when the method is called recursively
-    #   and should not be set explicitly (optional).
-    #
-    # Symbol keys in hashes are used as special directives. Including <tt>repeat: true</tt> will cause the
-    # parent hash's key for the child hash to be prefixed to each line of the output. Example:
-    #
-    #   {
-    #     # ...
-    #
-    #     'add_header' => {
-    #       repeat: true,
-    #       'X-Frame-Options' => 'DENY',
-    #       'X-Content-Type-Options' => 'nosniff',
-    #     }
-    #   }
-    #
-    # Result:
-    #
-    #   # ...
-    #
-    #   add_header X-Frame-Options DENY;
-    #   add_header X-Content-Type-Options nosniff;
-    #
-    # A hash containing <tt>raw: '...'</tt> can be used to include a raw chunk of text rather than key-value
-    # pairs. Example:
-    #
-    #   {
-    #     # ...
-    #
-    #     'location /' => {
-    #       raw: """
-    #         if ($scheme = https) { ... }
-    #         if ($host ~ ^www.) { ... }
-    #       """,
-    #     }
-    #   }
-    #
-    # Result:
-    #
-    #   location / {
-    #     if ($scheme = https) { ... }
-    #     if ($host ~ ^www.) { ... }
-    #   }
-    #
-    def self.to_nginx_config(hash, indent: 0, repeat: nil)
-      hash.each_with_object(+'') do |(k, v), config|
-        next if v.nil?
-        next if k == :repeat
-
-        config << (
-          if v.kind_of?(Hash)
-            if v[:repeat]
-              to_nginx_config(v, indent: indent, repeat: k)
-            else
-              "#{' ' * indent}#{k} {\n#{to_nginx_config(v, indent: indent + 2)}#{' ' * indent}}\n"
-            end
-          elsif k == :raw
-            "#{v.gsub(/^(?=.)/, ' ' * indent)}\n\n"
-          else
-            "#{' ' * indent}#{"#{repeat} " if repeat}#{k}#{" #{v}" unless v == true};\n"
-          end
-        )
-      end
-    end
-
-    ##
-    # Content of the launchctl plist file.
-    #
-    def self.plist
-      super(
-        <<~EOS
-          <key>ProgramArguments</key>
-          <array>
-            <string>/usr/local/opt/nginx/bin/nginx</string>
-            <string>-g</string>
-            <string>daemon off;</string>
-          </array>
-          <key>StandardOutPath</key>
-          <string>/usr/local/var/log/nginx/access.log</string>
-          <key>StandardErrorPath</key>
-          <string>/usr/local/var/log/nginx/error.log</string>
-        EOS
-      )
     end
   end
 end

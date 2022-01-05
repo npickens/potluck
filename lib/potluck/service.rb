@@ -182,38 +182,6 @@ module Potluck
     end
 
     ##
-    # Returns true if launchctl is available.
-    #
-    def self.launchctl?
-      defined?(@@launchctl) ? @@launchctl : (@@launchctl = `which launchctl 2>&1` && $? == 0)
-    end
-
-    ##
-    # Checks if launchctl is available and raises an error if not.
-    #
-    def self.ensure_launchctl!
-      launchctl? || raise(ServiceError.new("Cannot manage #{pretty_name}: launchctl not found"))
-    end
-
-    private
-
-    ##
-    # Calls the supplied block repeatedly until it returns false. Checks frequently at first and gradually
-    # reduces down to one-second intervals.
-    #
-    # * +timeout+ - Maximum number of seconds to wait before timing out (default: 30).
-    # * +block+ - Block to call until it returns false.
-    #
-    def wait(timeout = 30, &block)
-      while block.call && timeout > 0
-        reduce = [[(30 - timeout.to_i) / 5.0, 0.1].max, 1].min
-        timeout -= reduce
-
-        sleep(reduce)
-      end
-    end
-
-    ##
     # Human-friendly name of the service.
     #
     def self.pretty_name
@@ -261,6 +229,38 @@ module Potluck
         </dict>
         </plist>
       EOS
+    end
+
+    ##
+    # Returns true if launchctl is available.
+    #
+    def self.launchctl?
+      defined?(@@launchctl) ? @@launchctl : (@@launchctl = `which launchctl 2>&1` && $? == 0)
+    end
+
+    ##
+    # Checks if launchctl is available and raises an error if not.
+    #
+    def self.ensure_launchctl!
+      launchctl? || raise(ServiceError.new("Cannot manage #{pretty_name}: launchctl not found"))
+    end
+
+    private
+
+    ##
+    # Calls the supplied block repeatedly until it returns false. Checks frequently at first and gradually
+    # reduces down to one-second intervals.
+    #
+    # * +timeout+ - Maximum number of seconds to wait before timing out (default: 30).
+    # * +block+ - Block to call until it returns false.
+    #
+    def wait(timeout = 30, &block)
+      while block.call && timeout > 0
+        reduce = [[(30 - timeout.to_i) / 5.0, 0.1].max, 1].min
+        timeout -= reduce
+
+        sleep(reduce)
+      end
     end
   end
 end

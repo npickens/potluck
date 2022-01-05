@@ -143,6 +143,28 @@ module Potluck
       @logger.level = original_level if original_level
     end
 
+    ##
+    # Content of the launchctl plist file.
+    #
+    def self.plist
+      super(
+        <<~EOS
+          <key>ProgramArguments</key>
+          <array>
+            <string>/usr/local/opt/postgresql/bin/postgres</string>
+            <string>-D</string>
+            <string>/usr/local/var/postgres</string>
+          </array>
+          <key>WorkingDirectory</key>
+          <string>/usr/local</string>
+          <key>StandardOutPath</key>
+          <string>/usr/local/var/log/postgres.log</string>
+          <key>StandardErrorPath</key>
+          <string>/usr/local/var/log/postgres.log</string>
+        EOS
+      )
+    end
+
     private
 
     ##
@@ -183,28 +205,6 @@ module Potluck
           "connecting to system database #{tmp_config[:database].inspect}. Please create the database "\
           'manually.', e))
       end
-    end
-
-    ##
-    # Content of the launchctl plist file.
-    #
-    def self.plist
-      super(
-        <<~EOS
-          <key>ProgramArguments</key>
-          <array>
-            <string>/usr/local/opt/postgresql/bin/postgres</string>
-            <string>-D</string>
-            <string>/usr/local/var/postgres</string>
-          </array>
-          <key>WorkingDirectory</key>
-          <string>/usr/local</string>
-          <key>StandardOutPath</key>
-          <string>/usr/local/var/log/postgres.log</string>
-          <key>StandardErrorPath</key>
-          <string>/usr/local/var/log/postgres.log</string>
-        EOS
-      )
     end
   end
 end
