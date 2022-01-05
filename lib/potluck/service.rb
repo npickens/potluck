@@ -24,7 +24,7 @@ module Potluck
     # * +manage+ - True if the service runs locally and should be managed by this process (default: true if
     #   launchctl is available and false otherwise).
     #
-    def initialize(logger: nil, manage: launchctl?)
+    def initialize(logger: nil, manage: self.class.launchctl?)
       @logger = logger
       @manage = !!manage
 
@@ -34,7 +34,7 @@ module Potluck
         @start_command = manage[:start]
         @stop_command = manage[:stop]
       elsif manage
-        ensure_launchctl!
+        self.class.ensure_launchctl!
       end
     end
 
@@ -43,20 +43,6 @@ module Potluck
     #
     def manage?
       @manage
-    end
-
-    ##
-    # Returns true if launchctl is available.
-    #
-    def launchctl?
-      defined?(@@launchctl) ? @@launchctl : (@@launchctl = `which launchctl 2>&1` && $? == 0)
-    end
-
-    ##
-    # Checks if launchctl is available and raises an error if not.
-    #
-    def ensure_launchctl!
-      launchctl? || raise(ServiceError.new("Cannot manage #{self.class.pretty_name}: launchctl not found"))
     end
 
     ##
@@ -193,6 +179,20 @@ module Potluck
       else
         error ? $stderr.puts(message) : $stdout.puts(message)
       end
+    end
+
+    ##
+    # Returns true if launchctl is available.
+    #
+    def self.launchctl?
+      defined?(@@launchctl) ? @@launchctl : (@@launchctl = `which launchctl 2>&1` && $? == 0)
+    end
+
+    ##
+    # Checks if launchctl is available and raises an error if not.
+    #
+    def self.ensure_launchctl!
+      launchctl? || raise(ServiceError.new("Cannot manage #{pretty_name}: launchctl not found"))
     end
 
     private

@@ -56,7 +56,7 @@ module Potluck
     def initialize(hosts, port, subdomains: nil, ssl: nil, one_host: false, www: nil, multiple_slashes: nil,
         multiple_question_marks: nil, trailing_slash: nil, trailing_question_mark: nil, config: {},
         ensure_host_entries: false, **args)
-      if args[:manage] && !args[:manage].kind_of?(Hash) && !launchctl?
+      if args[:manage] && !args[:manage].kind_of?(Hash) && !self.class.launchctl?
         args[:manage] = NON_LAUNCHCTL_COMMANDS
       end
 
