@@ -72,7 +72,7 @@ module Potluck
     def start
       return unless manage?
 
-      ensure_plist unless @start_command
+      self.class.write_plist unless @start_command
 
       case status
       when :error then stop
@@ -195,6 +195,14 @@ module Potluck
     end
 
     ##
+    # Writes the service's launchctl plist file to disk.
+    #
+    def self.write_plist
+      FileUtils.mkdir_p(File.dirname(plist_path))
+      File.write(plist_path, plist)
+    end
+
+    ##
     # Returns true if launchctl is available.
     #
     def self.launchctl?
@@ -237,14 +245,6 @@ module Potluck
     #
     def stop_command
       @stop_command || "launchctl bootout gui/#{Process.uid}/#{self.class.launchctl_name}"
-    end
-
-    ##
-    # Writes the service's launchctl plist file to disk.
-    #
-    def ensure_plist
-      FileUtils.mkdir_p(File.dirname(self.class.plist_path))
-      File.write(self.class.plist_path, self.class.plist)
     end
 
     ##
