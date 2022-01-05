@@ -175,7 +175,7 @@ module Potluck
     ##
     # Content of the launchctl plist file.
     #
-    def self.plist(content)
+    def self.plist(content = '')
       <<~EOS
         <?xml version="1.0" encoding="UTF-8"?>
         #{'<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.'\
