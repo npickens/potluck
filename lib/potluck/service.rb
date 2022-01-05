@@ -46,43 +46,6 @@ module Potluck
     end
 
     ##
-    # Command to get the status of the service.
-    #
-    def status_command
-      @status_command || "launchctl list 2>&1 | grep #{SERVICE_PREFIX}#{self.class.service_name}"
-    end
-
-    ##
-    # Regular expression to check the output of +#status_command+ against to determine if the service is in
-    # an error state.
-    #
-    def status_error_regex
-      @status_error_regex || LAUNCHCTL_ERROR_REGEX
-    end
-
-    ##
-    # Command to start the service.
-    #
-    def start_command
-      @start_command || "launchctl bootstrap gui/#{Process.uid} #{self.class.plist_path}"
-    end
-
-    ##
-    # Command to stop the service.
-    #
-    def stop_command
-      @stop_command || "launchctl bootout gui/#{Process.uid}/#{self.class.launchctl_name}"
-    end
-
-    ##
-    # Writes the service's launchctl plist file to disk.
-    #
-    def ensure_plist
-      FileUtils.mkdir_p(File.dirname(self.class.plist_path))
-      File.write(self.class.plist_path, self.class.plist)
-    end
-
-    ##
     # Returns the status of the service:
     #
     # * +:active+ if the service is managed and running.
@@ -246,6 +209,43 @@ module Potluck
     end
 
     private
+
+    ##
+    # Command to get the status of the service.
+    #
+    def status_command
+      @status_command || "launchctl list 2>&1 | grep #{SERVICE_PREFIX}#{self.class.service_name}"
+    end
+
+    ##
+    # Regular expression to check the output of +#status_command+ against to determine if the service is in
+    # an error state.
+    #
+    def status_error_regex
+      @status_error_regex || LAUNCHCTL_ERROR_REGEX
+    end
+
+    ##
+    # Command to start the service.
+    #
+    def start_command
+      @start_command || "launchctl bootstrap gui/#{Process.uid} #{self.class.plist_path}"
+    end
+
+    ##
+    # Command to stop the service.
+    #
+    def stop_command
+      @stop_command || "launchctl bootout gui/#{Process.uid}/#{self.class.launchctl_name}"
+    end
+
+    ##
+    # Writes the service's launchctl plist file to disk.
+    #
+    def ensure_plist
+      FileUtils.mkdir_p(File.dirname(self.class.plist_path))
+      File.write(self.class.plist_path, self.class.plist)
+    end
 
     ##
     # Calls the supplied block repeatedly until it returns false. Checks frequently at first and gradually
