@@ -27,6 +27,7 @@ module Potluck
     def initialize(logger: nil, manage: self.class.launchctl?)
       @logger = logger
       @manage = !!manage
+      @manage_with_launchctl = false
 
       if manage.kind_of?(Hash)
         @status_command = manage[:status]
@@ -34,6 +35,7 @@ module Potluck
         @start_command = manage[:start]
         @stop_command = manage[:stop]
       elsif manage
+        @manage_with_launchctl = true
         self.class.ensure_launchctl!
       end
     end
@@ -43,6 +45,13 @@ module Potluck
     #
     def manage?
       @manage
+    end
+
+    ##
+    # Returns true if the service is managed via launchctl.
+    #
+    def manage_with_launchctl?
+      @manage_with_launchctl
     end
 
     ##
@@ -72,13 +81,12 @@ module Potluck
     def start
       return unless manage?
 
-      self.class.write_plist unless @start_command
-
       case status
       when :error then stop
       when :active then return
       end
 
+      self.class.write_plist if manage_with_launchctl?
       run(start_command)
       wait { status == :inactive }
 
@@ -93,6 +101,7 @@ module Potluck
     def stop
       return unless manage? && status != :inactive
 
+      self.class.write_plist if manage_with_launchctl?
       run(stop_command)
       wait { status != :inactive }
 
