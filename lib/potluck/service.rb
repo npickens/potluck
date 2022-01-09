@@ -90,7 +90,7 @@ module Potluck
       run(start_command)
       wait { status == :inactive }
 
-      raise(ServiceError.new("Could not start #{self.class.pretty_name}")) if status != :active
+      raise(ServiceError, "Could not start #{self.class.pretty_name}") if status != :active
 
       log("#{self.class.pretty_name} started")
     end
@@ -105,7 +105,7 @@ module Potluck
       run(stop_command)
       wait { status != :inactive }
 
-      raise(ServiceError.new("Could not stop #{self.class.pretty_name}")) if status != :inactive
+      raise(ServiceError, "Could not stop #{self.class.pretty_name}") if status != :inactive
 
       log("#{self.class.pretty_name} stopped")
     end
@@ -133,7 +133,7 @@ module Potluck
 
       if status != 0
         output.split("\n").each { |line| log(line, :error) }
-        raise(ServiceError.new("Command exited with status #{status.to_i}: #{command}"))
+        raise(ServiceError, "Command exited with status #{status.to_i}: #{command}")
       else
         output
       end
@@ -222,7 +222,7 @@ module Potluck
     # Checks if launchctl is available and raises an error if not.
     #
     def self.ensure_launchctl!
-      launchctl? || raise(ServiceError.new("Cannot manage #{pretty_name}: launchctl not found"))
+      launchctl? || raise(ServiceError, "Cannot manage #{pretty_name}: launchctl not found")
     end
 
     private

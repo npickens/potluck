@@ -49,8 +49,7 @@ module Potluck
         @auto_generated = !crt_file && !key_file && !dhparam_file
 
         if !@auto_generated && (!crt_file || !key_file || !dhparam_file)
-          raise(ArgumentError.new('Must supply values for all three or none: crt_file, key_file, '\
-            'dhparam_file'))
+          raise(ArgumentError, 'Must supply values for all three or none: crt_file, key_file, dhparam_file')
         end
 
         @csr_file = File.join(@dir, "#{@host}.csr").freeze
