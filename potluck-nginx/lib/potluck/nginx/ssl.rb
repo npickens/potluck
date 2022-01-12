@@ -84,13 +84,13 @@ module Potluck
 
         @nginx.log('Generating SSL files...')
 
-        @nginx.run("openssl genrsa -out #{@key_file} 4096", redirect_stderr: false)
+        @nginx.run("openssl genrsa -out #{@key_file} 4096", capture_stderr: false)
         @nginx.run("openssl req -out #{@csr_file} -key #{@key_file} -new -sha256 -config /dev/stdin <<< "\
-          "'#{openssl_config}'", redirect_stderr: false)
+          "'#{openssl_config}'", capture_stderr: false)
         @nginx.run("openssl x509 -in #{@csr_file} -out #{@crt_file} -signkey #{@key_file} -days "\
           "#{CERT_DAYS} -req -sha256 -extensions req_ext -extfile /dev/stdin <<< '#{openssl_config}'",
-          redirect_stderr: false)
-        @nginx.run("openssl dhparam -out #{@dhparam_file} 2048", redirect_stderr: false)
+          capture_stderr: false)
+        @nginx.run("openssl dhparam -out #{@dhparam_file} 2048", capture_stderr: false)
 
         if IS_MACOS
           @nginx.log('Adding cert to keychain...')

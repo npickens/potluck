@@ -124,16 +124,16 @@ module Potluck
     # Runs a command with the default shell. Raises an error if the command exits with a non-zero status.
     #
     # * +command+ - Command to run.
-    # * +redirect_stderr+ - True if stderr should be redirected to stdout; otherwise stderr output will not
+    # * +capture_stderr+ - True if stderr should be redirected to stdout; otherwise stderr output will not
     #   be logged (default: true).
     #
-    def run(command, redirect_stderr: true)
-      output = `#{command}#{' 2>&1' if redirect_stderr}`
+    def run(command, capture_stderr: true)
+      output = `#{command}#{' 2>&1' if capture_stderr}`
       status = $?
 
       if status != 0
         output.split("\n").each { |line| log(line, :error) }
-        raise(ServiceError, "Command exited with status #{status.to_i}: #{command}")
+        raise(ServiceError, "Command exited with status #{status.exitstatus}: #{command}")
       else
         output
       end
