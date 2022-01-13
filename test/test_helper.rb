@@ -30,11 +30,11 @@ module TestHelper
     end
 
     def context_stack
-      @@context_stack ||= []
+      @context_stack ||= []
     end
 
     def test_methods
-      @@test_methods ||= []
+      @test_methods ||= []
     end
 
     def context_string
