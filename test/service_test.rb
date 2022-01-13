@@ -2,6 +2,8 @@
 
 require('fileutils')
 require('logger')
+require('minitest/autorun')
+require('potluck')
 require('stringio')
 require_relative('test_helper')
 

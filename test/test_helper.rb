@@ -1,5 +1,8 @@
 # frozen_string_literal: true
 
+require('minitest')
+require('potluck')
+
 module TestHelper
   TMP_DIR = File.join(__dir__, 'tmp').freeze
   MINITEST_TEST_METHOD_REGEX = /^test_/.freeze
