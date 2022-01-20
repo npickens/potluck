@@ -118,7 +118,7 @@ module Potluck
       original_level = @logger.level
       @logger.level = Logger::WARN if @logger.level == Logger::INFO
 
-      args = [Sequel::Model.db, dir, {allow_missing_migration_files: true}]
+      args = [@database, dir, {allow_missing_migration_files: true}]
       migrator = Sequel::TimestampMigrator.new(*args)
 
       return if migrator.files.empty?
