@@ -64,34 +64,45 @@ module Potluck
     # Connects to the configured Postgres database.
     #
     def connect
-      (tries ||= 0) && (tries += 1)
-      @database = Sequel.connect(@config, logger: @logger)
-    rescue Sequel::DatabaseConnectionError => e
-      if (dud = Sequel::DATABASES.last)
-        dud.disconnect
-        Sequel.synchronize { Sequel::DATABASES.delete(dud) }
+      role_created = false
+      database_created = false
+
+      begin
+        (tries ||= 0) && (tries += 1)
+        @database = Sequel.connect(@config, logger: @logger)
+      rescue Sequel::DatabaseConnectionError => e
+        if (dud = Sequel::DATABASES.last)
+          dud.disconnect
+          Sequel.synchronize { Sequel::DATABASES.delete(dud) }
+        end
+
+        message = e.message.downcase
+
+        if message =~ ROLE_NOT_FOUND_REGEX && !role_created && manage?
+          role_created = true
+          create_role
+          retry
+        elsif message =~ DATABASE_NOT_FOUND_REGEX && !database_created && manage?
+          database_created = true
+          create_database
+          retry
+        elsif message.include?(STARTING_UP_STRING) && tries < STARTING_UP_TIMEOUT
+          sleep(1)
+          retry
+        elsif message.include?(CONNECTION_REFUSED_STRING) && tries < CONNECTION_REFUSED_TIMEOUT
+          sleep(1)
+          retry
+        elsif message.include?(CONNECTION_REFUSED_STRING)
+          raise(PostgresError.new(e.message.strip, e))
+        else
+          raise
+        end
       end
 
-      message = e.message.downcase
-
-      if message =~ ROLE_NOT_FOUND_REGEX && tries == 1
-        create_database_role
-        create_database
-        retry
-      elsif message =~ DATABASE_NOT_FOUND_REGEX && tries == 1
-        create_database
-        retry
-      elsif message.include?(STARTING_UP_STRING) && tries < STARTING_UP_TIMEOUT
-        sleep(1)
-        retry
-      elsif message.include?(CONNECTION_REFUSED_STRING) && tries < CONNECTION_REFUSED_TIMEOUT && manage?
-        sleep(1)
-        retry
-      elsif message.include?(CONNECTION_REFUSED_STRING)
-        raise(PostgresError.new(e.message.strip, e))
-      else
-        raise
-      end
+      # Only grant permissions if the database already existed but the role did not. Automatic database
+      # creation (via #create_database) is performed as the configured role, which means explicit permission
+      # granting is not necessary.
+      grant_permissions if role_created && !database_created
     end
 
     ##
@@ -171,20 +182,19 @@ module Potluck
     # Attempts to connect to the 'postgres' database as the system user with no password and create the
     # configured role. Useful in development.
     #
-    def create_database_role
-      tmp_config = @config.dup
+    def create_role
+      tmp_config = admin_database_config
       tmp_config[:database] = 'postgres'
-      tmp_config[:username] = ENV['USER']
-      tmp_config[:password] = nil
 
       begin
         Sequel.connect(tmp_config, logger: @logger) do |database|
-          database.execute("CREATE ROLE #{@config[:username]} WITH LOGIN CREATEDB REPLICATION PASSWORD "\
-            "'#{@config[:password]}'")
+          database.execute("CREATE ROLE \"#{@config[:username]}\" WITH LOGIN CREATEDB REPLICATION"\
+            "#{" PASSWORD '#{@config[:password]}'" if @config[:password]}")
         end
       rescue => e
-        raise(PostgresError.new("Database role #{@config[:username].inspect} could not be created using "\
-          "system user #{tmp_config[:username].inspect}. Please create the role manually.", e))
+        raise(PostgresError.new("Failed to create database role #{@config[:username].inspect} by "\
+          "connecting to database #{tmp_config[:database].inspect} as role "\
+          "#{tmp_config[:username].inspect}. Please create the role manually.", e))
       end
     end
 
@@ -198,13 +208,45 @@ module Potluck
 
       begin
         Sequel.connect(tmp_config, logger: @logger) do |database|
-          database.execute("CREATE DATABASE #{@config[:database]}")
+          database.execute("CREATE DATABASE \"#{@config[:database]}\"")
         end
       rescue => e
-        raise(PostgresError.new("Database #{@config[:database].inspect} could not be created by "\
-          "connecting to system database #{tmp_config[:database].inspect}. Please create the database "\
-          'manually.', e))
+        raise(PostgresError.new("Failed to create database #{@config[:database].inspect} by connecting to "\
+          "database #{tmp_config[:database].inspect} as role #{tmp_config[:username].inspect}. "\
+          'Please create the database manually.', e))
       end
+    end
+
+    ##
+    # Grants appropriate permissions for the configured database role.
+    #
+    def grant_permissions
+      tmp_config = admin_database_config
+
+      begin
+        Sequel.connect(tmp_config, logger: @logger) do |db|
+          db.execute("GRANT ALL PRIVILEGES ON ALL TABLES IN SCHEMA public TO \"#{@config[:username]}\"")
+          db.execute("GRANT ALL PRIVILEGES ON ALL SEQUENCES IN SCHEMA public TO \"#{@config[:username]}\"")
+          db.execute("ALTER DEFAULT PRIVILEGES FOR ROLE \"#{@config[:username]}\" IN SCHEMA public GRANT "\
+            "ALL PRIVILEGES ON TABLES TO \"#{@config[:username]}\"")
+        end
+      rescue => e
+        raise(PostgresError.new("Failed to grant database permissions for role "\
+          "#{@config[:username].inspect} by connecting as role #{tmp_config[:username].inspect}. Please "\
+          'grant appropriate permissions manually.', e))
+      end
+    end
+
+    ##
+    # Returns a configuration hash for connecting to Postgres to perform administrative tasks (i.e. role and
+    # database creation). Uses the system user as the username and no password.
+    #
+    def admin_database_config
+      config = @config.dup
+      config[:username] = ENV['USER']
+      config[:password] = nil
+
+      config
     end
   end
 end
