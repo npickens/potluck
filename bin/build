@@ -12,7 +12,7 @@ LIB_NAME = File.basename(Dir[File.join(BASE_DIR, '*.gemspec')].first, '.gemspec'
 GEMSPEC_FILES = (Dir[File.join(BASE_DIR, '*.gemspec')] +
   Dir[File.join(BASE_DIR, "#{LIB_NAME}-*", '*.gemspec')]).freeze
 VERSION_FILES = Dir[File.join(BASE_DIR, "{.,#{LIB_NAME}-*}", 'VERSION')].freeze
-VERSION_FILE_RUBY = File.join(BASE_DIR, 'lib', LIB_NAME, 'version.rb').freeze
+VERSION_FILES_RUBY = Dir[File.join(BASE_DIR, "{.,#{LIB_NAME}-*}", 'lib', '**', 'version.rb')].freeze
 TEST_COMMAND = File.join(BASE_DIR, 'bin', 'test').freeze
 
 OLD_VERSION = File.read(VERSION_FILES.first).strip.freeze
@@ -43,9 +43,11 @@ def update_version(version = NEW_VERSION, quiet = false)
     File.write(version_file, "#{version}\n")
   end
 
-  ruby = File.read(VERSION_FILE_RUBY)
-  ruby.sub!(/(?<=VERSION = (['"]))(\d+\.\d+\.\d+)(?=\1)/, version)
-  File.write(VERSION_FILE_RUBY, ruby)
+  VERSION_FILES_RUBY.each do |version_file_ruby|
+    ruby = File.read(version_file_ruby)
+    ruby.sub!(/(?<=VERSION = (['"]))(\d+\.\d+\.\d+)(?=\1)/, version)
+    File.write(version_file_ruby, ruby)
+  end
 
   finish_task('Version number updated') unless quiet
 end

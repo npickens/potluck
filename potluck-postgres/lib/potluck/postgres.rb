@@ -2,6 +2,7 @@
 
 require('potluck')
 require('sequel')
+require_relative('postgres/version')
 
 module Potluck
   ##

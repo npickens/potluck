@@ -4,6 +4,7 @@ require('fileutils')
 require('potluck')
 require_relative('nginx/ssl')
 require_relative('nginx/util')
+require_relative('nginx/version')
 
 module Potluck
   ##

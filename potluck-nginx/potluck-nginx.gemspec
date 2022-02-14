@@ -1,6 +1,6 @@
 # frozen_string_literal: true
 
-version = File.read(File.expand_path(File.join('..', '..', 'VERSION'), __FILE__)).strip
+version = File.read(File.join(__dir__, 'VERSION')).strip.freeze
 
 Gem::Specification.new('potluck-nginx', version) do |spec|
   spec.authors       = ['Nate Pickens']
@@ -9,7 +9,7 @@ Gem::Specification.new('potluck-nginx', version) do |spec|
                        'its configuration files from Ruby.'
   spec.homepage      = 'https://github.com/npickens/potluck/tree/master/potluck-nginx'
   spec.license       = 'MIT'
-  spec.files         = Dir['lib/**/*.rb', 'LICENSE', 'README.md']
+  spec.files         = Dir['lib/**/*.rb', 'LICENSE', 'README.md', 'VERSION']
 
   if spec.respond_to?(:metadata)
     spec.metadata['allowed_push_host'] = 'https://rubygems.org'
