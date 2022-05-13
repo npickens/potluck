@@ -142,7 +142,7 @@ module Potluck
 
         return if applied.empty? && steps <= 0
 
-        index = [[0, (all.index(current) || -1) + steps].max, all.size].min
+        index = [[0, (all.index(current) || -1) + steps].max, all.size - 1].min
         file = all[index]
 
         args.last[:target] = migrator.send(:migration_version_from_file, file)
