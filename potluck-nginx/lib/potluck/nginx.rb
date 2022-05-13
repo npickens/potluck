@@ -352,9 +352,7 @@ module Potluck
     # Writes the Nginx configuration to the (inactive) configuration file.
     #
     def write_config
-      File.open(@config_file_inactive, 'w') do |file|
-        file.write(config_file_content)
-      end
+      File.write(@config_file_inactive, config_file_content)
     end
 
     ##
