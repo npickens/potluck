@@ -366,7 +366,7 @@ module Potluck
     # Renames the active Nginx configuration file to its inactive name.
     #
     def deactivate_config
-      FileUtils.mv(@config_file_active, @config_file_inactive) if File.exists?(@config_file_active)
+      FileUtils.mv(@config_file_active, @config_file_inactive) if File.exist?(@config_file_active)
     end
 
     ##

@@ -73,10 +73,10 @@ module Potluck
       #
       def ensure_files
         return if !@auto_generated || (
-          File.exists?(@csr_file) &&
-          File.exists?(@key_file) &&
-          File.exists?(@crt_file) &&
-          File.exists?(@dhparam_file) &&
+          File.exist?(@csr_file) &&
+          File.exist?(@key_file) &&
+          File.exist?(@crt_file) &&
+          File.exist?(@dhparam_file) &&
           (Time.parse(
             @nginx.run("openssl x509 -enddate -noout -in #{@crt_file}").sub('notAfter=', '')
           ) - Time.now) >= CERT_RENEW_DAYS * 24 * 60 * 60
