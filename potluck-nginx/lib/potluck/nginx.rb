@@ -147,14 +147,14 @@ module Potluck
         <<~EOS
           <key>ProgramArguments</key>
           <array>
-            <string>/usr/local/opt/nginx/bin/nginx</string>
+            <string>#{HOMEBREW_PREFIX}/opt/nginx/bin/nginx</string>
             <string>-g</string>
             <string>daemon off;</string>
           </array>
           <key>StandardOutPath</key>
-          <string>/usr/local/var/log/nginx/access.log</string>
+          <string>#{HOMEBREW_PREFIX}/var/log/nginx/access.log</string>
           <key>StandardErrorPath</key>
-          <string>/usr/local/var/log/nginx/error.log</string>
+          <string>#{HOMEBREW_PREFIX}/var/log/nginx/error.log</string>
         EOS
       )
     end

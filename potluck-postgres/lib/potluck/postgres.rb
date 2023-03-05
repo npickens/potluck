@@ -159,7 +159,7 @@ module Potluck
     # Content of the launchctl plist file.
     #
     def self.plist
-      versions = Dir["/usr/local/opt/postgresql@*"].sort_by { |path| path.split('@').last.to_f }
+      versions = Dir["#{HOMEBREW_PREFIX}/opt/postgresql@*"].sort_by { |path| path.split('@').last.to_f }
       version =
         if versions.empty?
           raise(PostgresError, "No Postgres installation found (try running `brew install postgresql@X`)")
@@ -176,16 +176,16 @@ module Potluck
           </dict>
           <key>ProgramArguments</key>
           <array>
-            <string>/usr/local/opt/#{version}/bin/postgres</string>
+            <string>#{HOMEBREW_PREFIX}/opt/#{version}/bin/postgres</string>
             <string>-D</string>
-            <string>/usr/local/var/#{version}</string>
+            <string>#{HOMEBREW_PREFIX}/var/#{version}</string>
           </array>
           <key>WorkingDirectory</key>
-          <string>/usr/local</string>
+          <string>#{HOMEBREW_PREFIX}</string>
           <key>StandardOutPath</key>
-          <string>/usr/local/var/log/#{version}.log</string>
+          <string>#{HOMEBREW_PREFIX}/var/log/#{version}.log</string>
           <key>StandardErrorPath</key>
-          <string>/usr/local/var/log/#{version}.log</string>
+          <string>#{HOMEBREW_PREFIX}/var/log/#{version}.log</string>
         EOS
       )
     end
