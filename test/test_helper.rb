@@ -3,6 +3,16 @@
 require('minitest/autorun')
 require_relative('../lib/potluck')
 
+module Minitest
+  def self.plugin_index_init(options)
+    return unless options[:filter].to_i.to_s == options[:filter]
+
+    options[:filter] = "/^test_#{options[:filter]}: /"
+  end
+
+  register_plugin('index')
+end
+
 module TestHelper
   TMP_DIR = File.join(__dir__, 'tmp').freeze
 

@@ -24,5 +24,5 @@ Gem::Specification.new('potluck-nginx', version) do |spec|
   spec.add_dependency('potluck', version)
 
   spec.add_development_dependency('bundler', '~> 2.0')
-  spec.add_development_dependency('minitest', '>= 5.11.2', '< 6.0.0')
+  spec.add_development_dependency('minitest', '~> 5.24')
 end
