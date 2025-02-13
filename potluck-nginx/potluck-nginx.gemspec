@@ -19,7 +19,7 @@ Gem::Specification.new('potluck-nginx', version) do |spec|
     raise('RubyGems 2.0 or newer is required to protect against public gem pushes.')
   end
 
-  spec.required_ruby_version = '>= 2.5.8'
+  spec.required_ruby_version = '>= 3.0.0'
 
   spec.add_dependency('potluck', version)
 
