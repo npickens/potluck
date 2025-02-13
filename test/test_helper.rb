@@ -5,7 +5,6 @@ require('potluck')
 
 module TestHelper
   TMP_DIR = File.join(__dir__, 'tmp').freeze
-  MINITEST_TEST_METHOD_REGEX = /^test_/.freeze
 
   Potluck.send(:remove_const, :DIR)
   Potluck.const_set(:DIR, TMP_DIR)
@@ -19,49 +18,17 @@ module TestHelper
   end
 
   module ClassMethods
-    def context(*contexts, &block)
-      contexts.each { |c| context_stack << c.to_s }
-      block.call
-      context_stack.pop(contexts.size)
-    end
-
     def test(description, &block)
-      method_name = "#{context_string} #{description}"
-      test_methods << method_name
+      @@test_count ||= 0
+      @@test_count += 1
+
+      method_name =
+        "test_#{@@test_count}: " \
+        "#{name.chomp('Test') unless description.match?(/^[A-Z]/)}" \
+        "#{' ' unless description.match?(/^[A-Z#.]/)}" \
+        "#{description}"
 
       define_method(method_name, &block)
-    end
-
-    def context_stack
-      @context_stack ||= []
-    end
-
-    def test_methods
-      @test_methods ||= []
-    end
-
-    def context_string
-      context_stack.each_with_object(+'').with_index do |(context, str), i|
-        next_item = context_stack[i + 1]
-
-        str << context
-        str << ' ' unless !next_item || next_item[0] == '#' || next_item.start_with?('::')
-      end
-    end
-
-    # Override of Minitest::Runnable.methods_matching
-    def methods_matching(regex)
-      regex == MINITEST_TEST_METHOD_REGEX ? test_methods : super
-    end
-  end
-
-  ##########################################################################################################
-  ## Minitest                                                                                             ##
-  ##########################################################################################################
-
-  class Minitest::Result
-    def location
-      super.delete_prefix("#{class_name}#")
     end
   end
 end
