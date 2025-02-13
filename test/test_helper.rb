@@ -25,10 +25,6 @@ module TestHelper
   Potluck.send(:remove_const, :DIR)
   Potluck.const_set(:DIR, TMP_DIR)
 
-  ##########################################################################################################
-  ## Testing                                                                                              ##
-  ##########################################################################################################
-
   def self.included(klass)
     klass.extend(ClassMethods)
   end
