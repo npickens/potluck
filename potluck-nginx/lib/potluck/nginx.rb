@@ -7,13 +7,11 @@ require_relative('nginx/util')
 require_relative('nginx/version')
 
 module Potluck
-  ##
   # A Ruby interface for configuring and controlling Nginx. Each instance of this class manages a separate
   # Nginx configuration file, which is loaded and unloaded from the base Nginx configuration when #start and
   # #stop are called, respectively. Any number of Ruby processes can thus each manage their own Nginx
   # configuration and control whether or not it is active without interfering with any other instances or
   # non-Ruby processes leveraging Nginx.
-  #
   class Nginx < Service
     CONFIG_NAME_ACTIVE = 'nginx.conf'
     CONFIG_NAME_INACTIVE = 'nginx-stopped.conf'
@@ -28,32 +26,28 @@ module Potluck
       stop: 'nginx -s stop',
     }.freeze
 
-    ##
-    # Creates a new instance.
+    # Public: Create a new instance.
     #
-    # * +hosts+ - One or more hosts.
-    # * +port+ - Port that the upstream (Ruby web server) is running on.
-    # * +subdomains+ - One or more subdomains (optional).
-    # * +ssl+ - SSL configuration arguments to pass to SSL.new (optional).
-    # * +one_host+ - True if URLs should be normalized to the first host in +hosts+ (optional, default:
-    #   false).
-    # * +www+ - +true+ if URLs should be normalized to include 'www.' prefix, +false+ to exclude 'www.', and
-    #   +nil+ if either is acceptable (optional, default: +nil+).
-    # * +multiple_slashes+ - +false+ if any occurrence of multiple slashes in the path portion of the URL
-    #   should be normalized to a single slash (optional, default: +nil+).
-    # * +multiple_question_marks+ - +false+ if multiple question marks in the URL signifying the start of
-    #   the query string should be normalized to a single question mark (optional, default: +nil+).
-    # * +trailing_slash+ - +true+ if URLs should be normalized to include a trailing slash at the end of the
-    #   path portion, +false+ to strip any trailing slash, and +nil+ if either is acceptable (optional,
-    #   default: +nil+).
-    # * +trailing_question_mark+ - +true+ if URLs should be normalized to include a trailing question mark
-    #   when the query string is empty, +false+ to strip any trailing question mark, and +nil+ if either is
-    #   acceptable (optional, default: +nil+).
-    # * +config+ - Nginx configuration hash; see #config (optional).
-    # * +ensure_host_entries+ - True if +hosts+ should be added to system /etc/hosts file as mappings to
-    #   localhost (optional, default: false).
-    # * +args+ - Arguments to pass to Potluck::Service.new (optional).
-    #
+    # hosts                    - String or Array of String hosts.
+    # port                     - Integer port that the upstream (Ruby web server) is running on.
+    # subdomains:              - String or Array of String subdomains.
+    # ssl:                     - Hash of SSL configuration arguments to pass to SSL.new.
+    # one_host:                - Boolean specifying if URLs should be normalized to the first item in the
+    #                            hosts array.
+    # www:                     - Boolean specifying if URLs should be normalized to include 'www.' (true),
+    #                            exclude it (false), or allow either (nil).
+    # multiple_slashes:        - Boolean specifying if URLs should be normalized to reduce multiple
+    #                            slashes in a row to a single one (false) or leave them alone (true or nil).
+    # multiple_question_marks: - Boolean specifying if URLs should be normalized to reduce multiple question
+    #                            marks in a row to a single one (false) or leave them alone (true or nil).
+    # trailing_slash:          - Boolean specifying if URLs should be normalized to include a trailing slash
+    #                            (true), exclude it (false), or allow either (nil).
+    # trailing_question_mark:  - Boolean specifying if URLs should be normalized to include a trailing
+    #                            question mark (true), exclude it (false), or allow either (nil).
+    # config:                  - Nginx configuration Hash (see #config).
+    # ensure_host_entries:     - Booelan specifying if hosts should be added to system /etc/hosts file as
+    #                            mappings to localhost.
+    # args                     - Hash of keyword arguments to pass to Service.new.
     def initialize(hosts, port, subdomains: nil, ssl: nil, one_host: false, www: nil, multiple_slashes: nil,
         multiple_question_marks: nil, trailing_slash: nil, trailing_question_mark: nil, config: {},
         ensure_host_entries: false, **args)
@@ -89,10 +83,11 @@ module Potluck
       @config_file_inactive = File.join(@dir, CONFIG_NAME_INACTIVE).freeze
     end
 
-    ##
-    # Ensures this instance's configuration file is active and starts Nginx if it's managed. If Nginx is
-    # already running, a reload signal is sent to the process after activating the configuration file.
+    # Public: Ensure this instance's configuration file is active and start Nginx. If Nginx is already
+    # running, send a reload signal to the process after activating the configuration file. Does nothing if
+    # Nginx is not managed.
     #
+    # Returns nothing.
     def start
       return unless manage?
 
@@ -108,13 +103,13 @@ module Potluck
       status == :active ? reload : super
     end
 
-    ##
-    # Ensures this instance's configuration file is inactive and optionally stops the Nginx process if it's
-    # managed.
+    # Public: Ensure this instance's configuration file is inactive and optionally stop Nginx. Does nothing
+    # if Nginx is not managed.
     #
-    # * +hard+ - True if the Nginx process should be stopped, false to just inactivate this instance's
-    #   configuration file and leave Nginx running (optional, default: false).
+    # hard - Boolean specifying if the Nginx process should be stopped (true) or  this instance's
+    #        configuration file should just be inactivated (false).
     #
+    # Returns nothing.
     def stop(hard = false)
       return unless manage?
 
@@ -123,25 +118,25 @@ module Potluck
       hard || status != :active ? super() : reload
     end
 
-    ##
-    # Reloads Nginx if it's managed.
+    # Public: Reload Nginx. Does nothing if Nginx is not managed.
     #
+    # Returns nothing.
     def reload
       return unless manage?
 
       run('nginx -s reload')
     end
 
-    ##
-    # Returns the content for the Nginx configuration file as a string.
+    # Public: Return the content for the Nginx configuration file.
     #
+    # Returns the String content.
     def config_file_content
       self.class.to_nginx_config(config)
     end
 
-    ##
-    # Content of the launchctl plist file.
+    # Public: Get the content of the launchctl plist file.
     #
+    # Returns the String content.
     def self.plist
       super(
         <<~EOS
@@ -159,57 +154,49 @@ module Potluck
       )
     end
 
-    ##
-    # Converts a hash to an Nginx configuration file content string. Keys should be strings and values
-    # either strings or hashes. A +nil+ value in a hash will result in that key-value pair being omitted.
+    # Public: Convert a hash to an Nginx configuration file content string. Keys are strings and values
+    # either strings or hashes. Symbol keys are used as special directives. A nil value in a hash will
+    # result in that key-value pair being omitted.
     #
-    # * +hash+ - Hash to convert to the string content of an Nginx configuration file.
-    # * +indent+ - Number of spaces to indent; used when the method is called recursively and should not be
-    #   set explicitly (optional, default: 0).
-    # * +repeat+ - Value to prepend to each entry of the hash; used when the method is called recursively
-    #   and should not be set explicitly (optional).
+    # hash   - Hash of String keys and String or Hash values to convert to the string content of an Nginx
+    #          configuration file.
+    # indent - Integer number of spaces to indent (used when the method is called recursively and should not
+    #          be set explicitly).
+    # repeat - String value to prepend to each entry of the hash (used when the method is called recursively
+    #          and should not be set explicitly).
     #
-    # Symbol keys in hashes are used as special directives. Including <tt>repeat: true</tt> will cause the
-    # parent hash's key for the child hash to be prefixed to each line of the output. Example:
+    # Examples
     #
-    #   {
-    #     # ...
+    #   # {repeat: true, ...} will cause the parent hash's key to be prefixed to each line of the output.
     #
+    #   Nginx.to_nginx_config(
     #     'add_header' => {
     #       repeat: true,
     #       'X-Frame-Options' => 'DENY',
     #       'X-Content-Type-Options' => 'nosniff',
     #     }
-    #   }
+    #   )
     #
-    # Result:
+    #   # => "add_header X-Frame-Options DENY;
+    #   #     add_header X-Content-Type-Options nosniff;"
     #
-    #   # ...
+    #   # {raw: "..." can be used to include a raw chunk of text rather than key-value pairs.
     #
-    #   add_header X-Frame-Options DENY;
-    #   add_header X-Content-Type-Options nosniff;
-    #
-    # A hash containing <tt>raw: '...'</tt> can be used to include a raw chunk of text rather than key-value
-    # pairs. Example:
-    #
-    #   {
-    #     # ...
-    #
+    #   Nginx.to_nginx_config(
     #     'location /' => {
     #       raw: """
     #         if ($scheme = https) { ... }
     #         if ($host ~ ^www.) { ... }
     #       """,
     #     }
-    #   }
+    #   )
     #
-    # Result:
+    #   # => "location / {
+    #   #       if ($scheme = https) { ... }
+    #   #       if ($host ~ ^www.) { ... }
+    #   #     }"
     #
-    #   location / {
-    #     if ($scheme = https) { ... }
-    #     if ($host ~ ^www.) { ... }
-    #   }
-    #
+    # Returns the Nginx configuration String.
     def self.to_nginx_config(hash, indent: 0, repeat: nil)
       hash.each_with_object(+'') do |(k, v), config|
         next if v.nil?
@@ -233,11 +220,11 @@ module Potluck
 
     private
 
-    ##
-    # Returns a hash representation of the Nginx configuration file content. Any configuration passed to
-    # Nginx.new is deep-merged into a base configuration hash, meaning nested hashes are merged rather than
-    # overwritten (see Util.deep_merge).
+    # Internal: Get a hash representation of the Nginx configuration file content. Any configuration passed
+    # to Nginx.new is deep-merged into a base configuration hash, meaning nested hashes are merged rather
+    # than overwritten (see Util.deep_merge).
     #
+    # Returns the Hash configuration.
     def config
       host_subdomains_regex = ([@host] + @subdomains).join('|')
       hosts_subdomains_regex = (@hosts + @subdomains).join('|')
@@ -348,31 +335,31 @@ module Potluck
       config
     end
 
-    ##
-    # Writes the Nginx configuration to the (inactive) configuration file.
+    # Internal: Write the Nginx configuration to the (inactive) configuration file.
     #
+    # Returns nothing.
     def write_config
       File.write(@config_file_inactive, config_file_content)
     end
 
-    ##
-    # Renames the inactive Nginx configuration file to its active name.
+    # Internal: Rename the inactive Nginx configuration file to its active name.
     #
+    # Returns nothing.
     def activate_config
       FileUtils.mv(@config_file_inactive, @config_file_active)
     end
 
-    ##
-    # Renames the active Nginx configuration file to its inactive name.
+    # Internal: Rename the active Nginx configuration file to its inactive name.
     #
+    # Returns nothing.
     def deactivate_config
       FileUtils.mv(@config_file_active, @config_file_inactive) if File.exist?(@config_file_active)
     end
 
-    ##
-    # Ensures hosts are mapped to localhost in the system /etc/hosts file. Useful in development. Uses sudo
-    # to perform the write, which will prompt for the system user's password.
+    # Internal: Ensure hosts are mapped to localhost in the system /etc/hosts file. Useful in development.
+    # Uses sudo to perform the write, which will prompt for the system user's password.
     #
+    # Returns nothing.
     def ensure_host_entries
       content = File.read('/etc/hosts')
       missing_entries = (@hosts + @subdomains).each_with_object([]) do |h, a|
@@ -392,11 +379,11 @@ module Potluck
       )
     end
 
-    ##
-    # Ensures Nginx's base configuration file contains an include statement for Potluck's Nginx
+    # Internal: Ensure Nginx's base configuration file contains an include statement for Potluck's Nginx
     # configuration files. Sudo is not used, so Nginx's base configuration file must be writable by the
     # system user running this Ruby process.
     #
+    # Returns nothing.
     def ensure_include
       config_file = `nginx -t 2>&1`[TEST_CONFIG_REGEX, :config]
       config_content = File.read(config_file)

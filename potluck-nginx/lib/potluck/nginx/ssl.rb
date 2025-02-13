@@ -4,10 +4,8 @@ require('time')
 
 module Potluck
   class Nginx < Service
-    ##
     # SSL-specific configuration for Nginx. Provides self-signed certificate generation for use in
     # developemnt.
-    #
     class SSL
       # Reference: https://ssl-config.mozilla.org/#server=nginx&config=intermediate&guideline=5.6
       DEFAULT_CONFIG = {
@@ -30,17 +28,16 @@ module Potluck
 
       attr_reader(:csr_file, :key_file, :crt_file, :dhparam_file, :config)
 
-      ##
-      # Creates a new instance. Providing no SSL files will cue generation of a self-signed certificate.
+      # Public: Create a new instance. Providing no SSL files will cue generation of a self-signed
+      # certificate.
       #
-      # * +nginx+ - Nginx instance.
-      # * +dir+ - Directory where SSL files are located or should be written to.
-      # * +host+ - Name of the host for determining file names and generating a self-signed certificate.
-      # * +crt_file+ - Path to the CRT file (optional).
-      # * +key_file+ - Path to the KEY file (optional).
-      # * +dhparam_file+ - Path to the DH parameters file (optional).
-      # * +config+ - Nginx configuration hash (optional).
-      #
+      # nginx         - Nginx instance.
+      # dir           - String directory where SSL files are located or should be written to.
+      # host          - String name of the host (used for file names and generating a self-signed cert).
+      # crt_file:     - String path to the CRT file (optional).
+      # key_file:     - String path to the KEY file (optional).
+      # dhparam_file: - String path to the DH parameters file (optional).
+      # config:       - Configuration Hash used by the Nginx instance (optional).
       def initialize(nginx, dir, host, crt_file: nil, key_file: nil, dhparam_file: nil, config: {})
         @nginx = nginx
         @dir = dir
@@ -66,11 +63,10 @@ module Potluck
         }, DEFAULT_CONFIG, config)
       end
 
-      ##
-      # If SSL files were passed to SSL.new, does nothing. Otherwise checks if auto-generated SSL files
-      # exist and generates them if not. If they do exist, the expiration for the certificate is checked and
-      # the certificate regenerated if the expiration date is soon or in the past.
+      # Public: Do nothing if SSL files were passed to the constructor; otherwise generate self-signed cert
+      # files if they don't exist already, will expire soon, or already did expire.
       #
+      # Returns nothing.
       def ensure_files
         return if !@auto_generated || (
           File.exist?(@csr_file) &&
@@ -107,9 +103,9 @@ module Potluck
 
       private
 
-      ##
-      # OpenSSL configuration content used when auto-generating an SSL certificate.
+      # Internal: Get the OpenSSL configuration content used when auto-generating an SSL certificate.
       #
+      # Returns the String configuration.
       def openssl_config
         <<~EOS
           [ req ]

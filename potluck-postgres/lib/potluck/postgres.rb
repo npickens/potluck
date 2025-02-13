@@ -5,18 +5,14 @@ require('sequel')
 require_relative('postgres/version')
 
 module Potluck
-  ##
   # Error class used to wrap errors encountered while connecting to or setting up a database.
-  #
   class PostgresError < ServiceError
     attr_reader(:wrapped_error)
 
-    ##
-    # Creates a new instance.
+    # Public: Create a new instance.
     #
-    # * +message+ - Error message.
-    # * +wrapped_error+ - Original error that was rescued and is being wrapped by this one (optional).
-    #
+    # message       - String error message.
+    # wrapped_error - Original Exception that was rescued and is being wrapped by this one.
     def initialize(message, wrapped_error = nil)
       super(message)
 
@@ -24,11 +20,8 @@ module Potluck
     end
   end
 
-  ##
-  # A Ruby interface for controlling and connecting to Postgres. Uses
-  # [Sequel](https://github.com/jeremyevans/sequel) to connect and perform automatic role and database
-  # creation, as well as for utility methods such as database schema migration.
-  #
+  # A Ruby interface for controlling and connecting to Postgres. Uses the Sequel gem to connect and perform
+  # automatic role and database creation, as well as for utility methods such as database schema migration.
   class Postgres < Service
     ROLE_NOT_FOUND_REGEX = /role .* does not exist/.freeze
     DATABASE_NOT_FOUND_REGEX = /database .* does not exist/.freeze
@@ -41,29 +34,27 @@ module Potluck
 
     attr_reader(:database)
 
-    ##
-    # Creates a new instance.
+    # Public: Create a new instance.
     #
-    # * +config+ - Configuration hash to pass to <tt>Sequel.connect</tt>.
-    # * +args+ - Arguments to pass to Potluck::Service.new (optional).
-    #
+    # config - Configuration Hash to pass to Sequel.connect.
+    # args   - Hash of keyword arguments to pass to Service.new.
     def initialize(config, **args)
       super(**args)
 
       @config = config
     end
 
-    ##
-    # Disconnects and stops the Postgres process.
+    # Public: Disconnect and stop the Postgres process.
     #
+    # Returns nothing.
     def stop
       disconnect
       super
     end
 
-    ##
-    # Connects to the configured Postgres database.
+    # Public: Connect to the configured Postgres database.
     #
+    # Returns nothing.
     def connect
       role_created = false
       database_created = false
@@ -106,21 +97,21 @@ module Potluck
       grant_permissions if role_created && !database_created
     end
 
-    ##
-    # Disconnects from the database if a connection was made.
+    # Public: Disconnect from the database if a connection was made.
     #
+    # Returns nothing.
     def disconnect
       @database&.disconnect
     end
 
-    ##
-    # Runs database migrations by way of Sequel's migration extension. Migration files must use the
+    # Public: Run database migrations by way of Sequel's migration extension. Migration files must use the
     # timestamp naming strategy as opposed to integers.
     #
-    # * +dir+ - Directory where migration files are located.
-    # * +steps+ - Number of steps forward or backward to migrate from the current migration, otherwise will
-    #   migrate to latest (optional).
+    # dir   - String directory where migration files are located.
+    # steps - Integer number of steps forward or backward to migrate from the current migration (if omitted,
+    #         will migrate forward to latest migration).
     #
+    # Returns nothing.
     def migrate(dir, steps = nil)
       return unless File.directory?(dir)
 
@@ -155,9 +146,9 @@ module Potluck
       @logger.level = original_level if original_level
     end
 
-    ##
-    # Content of the launchctl plist file.
+    # Public: Get the content of the launchctl plist file.
     #
+    # Returns the String content.
     def self.plist
       versions = Dir["#{HOMEBREW_PREFIX}/opt/postgresql@*"].sort_by { |path| path.split('@').last.to_f }
       version =
@@ -192,10 +183,11 @@ module Potluck
 
     private
 
-    ##
-    # Attempts to connect to the 'postgres' database as the system user with no password and create the
-    # configured role. Useful in development.
+    # Internal: Attempt to connect to the 'postgres' database as the system user with no password and create
+    # the configured role. Useful in development environments.
     #
+    # Returns nothing.
+    # Raises PostgresError if the role could not be created.
     def create_role
       tmp_config = admin_database_config
       tmp_config[:database] = 'postgres'
@@ -212,10 +204,11 @@ module Potluck
       end
     end
 
-    ##
-    # Attempts to connect to the 'postgres' database with the configured user and password and create the
-    # configured database. Useful in development.
+    # Internal: Attempt to connect to the 'postgres' database with the configured user and password and
+    # create the configured database. Useful in development environments.
     #
+    # Returns nothing.
+    # Raises PostgresError if the database could not be created.
     def create_database
       tmp_config = @config.dup
       tmp_config[:database] = 'postgres'
@@ -231,9 +224,11 @@ module Potluck
       end
     end
 
-    ##
-    # Grants appropriate permissions for the configured database role.
+    # Internal: Grant appropriate permissions for the configured database role. Useful in development
+    # environments.
     #
+    # Returns nothing.
+    # Raises PostgresError if permissions could not be granted.
     def grant_permissions
       tmp_config = admin_database_config
 
@@ -251,10 +246,11 @@ module Potluck
       end
     end
 
-    ##
-    # Returns a configuration hash for connecting to Postgres to perform administrative tasks (i.e. role and
-    # database creation). Uses the system user as the username and no password.
+    # Internal: Return a configuration hash for connecting to Postgres to perform administrative tasks
+    # (role and database creation). Uses the system user as the username and no password. Useful in
+    # development environments
     #
+    # Returns the configuration Hash.
     def admin_database_config
       config = @config.dup
       config[:username] = ENV['USER']

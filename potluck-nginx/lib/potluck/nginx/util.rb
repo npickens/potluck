@@ -2,18 +2,15 @@
 
 module Potluck
   class Nginx < Service
-    ##
-    # Utility methods for Nginx class.
-    #
+    # Utility methods for the Nginx class.
     class Util
-      ##
-      # Merges N hashes by merging nested hashes rather than overwriting them as is the case with
-      # <tt>Hash#merge</tt>.
+      # Public: Merge N hashes by merging nested hashes rather than overwriting them as is the case with
+      # Hash#merge.
       #
-      # * +hashes+ - Hashes to deep merge.
-      # * +arrays+ - True if arrays should be merged rather than overwritten (optional, default: false).
+      # hashes  - Hashes to deep merge.
+      # arrays: - Boolean specifying if arrays should be merged rather than overwritten.
       #
-      # Example:
+      # Examples
       #
       #   h1 = {hello: {item1: 'world'}}
       #   h2 = {hello: {item2: 'friend'}}
@@ -21,16 +18,13 @@ module Potluck
       #   Util.deep_merge(h1, h2)
       #   # => {hello: {item1: 'world', item2: 'friend'}}
       #
-      # By default only hashes are merged and arrays are still overwritten as they are with
-      # <tt>Hash#merge</tt>. Passing <tt>arrays: true</tt> will result in arrays being merged similarly to
-      # hashes. Example:
-      #
       #   h1 = {hello: {item1: ['world']}}
       #   h2 = {hello: {item1: ['friend']}}
       #
       #   Util.deep_merge(h1, h2, arrays: true)
       #   # => {hello: {item1: ['world', 'friend']}}
       #
+      # Returns the merged Hash.
       def self.deep_merge(*hashes, arrays: false)
         hash = hashes[0].dup
 
