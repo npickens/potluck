@@ -1,11 +1,10 @@
 # frozen_string_literal: true
 
+require_relative('test_helper')
+
 require('fileutils')
 require('logger')
-require('minitest/autorun')
 require('stringio')
-require_relative('../lib/potluck/service')
-require_relative('test_helper')
 
 class ServiceTest < Minitest::Test
   include(TestHelper)
