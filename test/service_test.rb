@@ -3,8 +3,8 @@
 require('fileutils')
 require('logger')
 require('minitest/autorun')
-require('potluck')
 require('stringio')
+require_relative('../lib/potluck/service')
 require_relative('test_helper')
 
 class ServiceTest < Minitest::Test

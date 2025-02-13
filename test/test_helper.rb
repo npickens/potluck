@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
-require('minitest')
-require('potluck')
+require('minitest/autorun')
+require_relative('../lib/potluck')
 
 module TestHelper
   TMP_DIR = File.join(__dir__, 'tmp').freeze
