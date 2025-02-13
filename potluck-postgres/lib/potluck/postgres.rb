@@ -104,8 +104,8 @@ module Potluck
       @database&.disconnect
     end
 
-    # Public: Run database migrations by way of Sequel's migration extension. Migration files must use the
-    # timestamp naming strategy as opposed to integers.
+    # Deprecated: Run database migrations by way of Sequel's migration extension. Migration files must use
+    # the timestamp naming strategy as opposed to integers.
     #
     # dir   - String directory where migration files are located.
     # steps - Integer number of steps forward or backward to migrate from the current migration (if omitted,
@@ -113,6 +113,11 @@ module Potluck
     #
     # Returns nothing.
     def migrate(dir, steps = nil)
+      location = caller_locations(1, 1).first
+
+      warn("#{location.path}:#{location.lineno}: #{self.class.name}#migrate is deprecated and will be " \
+        "removed soon. Please use Sequel's migration extension directly instead.")
+
       return unless File.directory?(dir)
 
       Sequel.extension(:migration)
