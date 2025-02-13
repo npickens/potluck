@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 require('minitest/autorun')
+require('minitest/reporters')
 require_relative('../lib/potluck')
 
 module Minitest
@@ -11,6 +12,8 @@ module Minitest
   end
 
   register_plugin('index')
+
+  Reporters.use!(Reporters::ProgressReporter.new)
 end
 
 module TestHelper

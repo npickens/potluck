@@ -25,4 +25,5 @@ Gem::Specification.new('potluck', version) do |spec|
 
   spec.add_development_dependency('bundler', '~> 2.0')
   spec.add_development_dependency('minitest', '~> 5.24')
+  spec.add_development_dependency('minitest-reporters', '~> 1.7')
 end
