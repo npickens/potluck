@@ -13,15 +13,12 @@ Gem::Specification.new('potluck', version) do |spec|
   spec.license       = 'MIT'
   spec.files         = Dir['lib/**/*.rb', 'LICENSE', 'README.md', 'VERSION']
 
-  if spec.respond_to?(:metadata)
-    spec.metadata['allowed_push_host'] = 'https://rubygems.org'
-    spec.metadata['homepage_uri'] = spec.homepage
-    spec.metadata['source_code_uri'] = spec.homepage
-  else
-    raise('RubyGems 2.0 or newer is required to protect against public gem pushes.')
-  end
+  spec.metadata['allowed_push_host'] = 'https://rubygems.org'
+  spec.metadata['homepage_uri'] = spec.homepage
+  spec.metadata['source_code_uri'] = spec.homepage
 
   spec.required_ruby_version = '>= 3.0.0'
+  spec.required_rubygems_version = '>= 2.0.0'
 
   spec.add_development_dependency('logger', '~> 1.6.6')
   spec.add_development_dependency('minitest', '~> 5.24')
