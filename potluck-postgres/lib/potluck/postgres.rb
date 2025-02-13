@@ -37,9 +37,9 @@ module Potluck
     # Public: Create a new instance.
     #
     # config - Configuration Hash to pass to Sequel.connect.
-    # args   - Hash of keyword arguments to pass to Service.new.
-    def initialize(config, **args)
-      super(**args)
+    # kwargs - Hash of keyword arguments to pass to Service.new.
+    def initialize(config, **kwargs)
+      super(**kwargs)
 
       @config = config
     end

@@ -47,15 +47,15 @@ module Potluck
     # config:                  - Nginx configuration Hash (see #config).
     # ensure_host_entries:     - Booelan specifying if hosts should be added to system /etc/hosts file as
     #                            mappings to localhost.
-    # args                     - Hash of keyword arguments to pass to Service.new.
+    # kwargs                   - Hash of keyword arguments to pass to Service.new.
     def initialize(hosts, port, subdomains: nil, ssl: nil, one_host: false, www: nil, multiple_slashes: nil,
         multiple_question_marks: nil, trailing_slash: nil, trailing_question_mark: nil, config: {},
-        ensure_host_entries: false, **args)
-      if args[:manage] && !args[:manage].kind_of?(Hash) && !self.class.launchctl?
-        args[:manage] = NON_LAUNCHCTL_COMMANDS
+        ensure_host_entries: false, **kwargs)
+      if kwargs[:manage] && !kwargs[:manage].kind_of?(Hash) && !self.class.launchctl?
+        kwargs[:manage] = NON_LAUNCHCTL_COMMANDS
       end
 
-      super(**args)
+      super(**kwargs)
 
       @hosts = Array(hosts).map { |h| h.sub(/^www\./, '') }.uniq
       @hosts += @hosts.map { |h| "www.#{h}" }
