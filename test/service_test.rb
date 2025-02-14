@@ -40,13 +40,13 @@ class ServiceTest < Minitest::Test
 
   test('enables management by default when launchctl is available') do
     Potluck::Service.stub(:launchctl?, true) do
-      assert_equal(true, Potluck::Service.new.manage?)
+      assert(Potluck::Service.new.manage?)
     end
   end
 
   test('disables management by default when launchctl is not available') do
     Potluck::Service.stub(:launchctl?, false) do
-      assert_equal(false, Potluck::Service.new.manage?)
+      refute(Potluck::Service.new.manage?)
     end
   end
 
@@ -63,7 +63,7 @@ class ServiceTest < Minitest::Test
   test('accepts a configuration hash for non-launchctl management') do
     service = Potluck::Service.new(manage: MANAGE)
 
-    assert_equal(true, service.manage?)
+    assert(service.manage?)
     assert_equal(MANAGE[:status], service.send(:status_command))
     assert_equal(MANAGE[:status_error_regex], service.send(:status_error_regex))
     assert_equal(MANAGE[:start], service.send(:start_command))
@@ -76,30 +76,30 @@ class ServiceTest < Minitest::Test
 
   test('#manage? returns true if default management is enabled') do
     Potluck::Service.stub(:launchctl?, true) do
-      assert_equal(true, Potluck::Service.new(manage: true).manage?)
+      assert(Potluck::Service.new(manage: true).manage?)
     end
   end
 
   test('#manage? returns true if custom management is enabled') do
-    assert_equal(true, Potluck::Service.new(manage: MANAGE).manage?)
+    assert(Potluck::Service.new(manage: MANAGE).manage?)
   end
 
   test('#manage? returns false if management is disabled') do
-    assert_equal(false, Potluck::Service.new(manage: false).manage?)
+    refute(Potluck::Service.new(manage: false).manage?)
   end
 
   test('#manage_with_launchctl? returns true if default management is enabled') do
     Potluck::Service.stub(:launchctl?, true) do
-      assert_equal(true, Potluck::Service.new(manage: true).manage_with_launchctl?)
+      assert(Potluck::Service.new(manage: true).manage_with_launchctl?)
     end
   end
 
   test('#manage_with_launchctl? returns false if custom management is enabled') do
-    assert_equal(false, Potluck::Service.new(manage: MANAGE).manage_with_launchctl?)
+    refute(Potluck::Service.new(manage: MANAGE).manage_with_launchctl?)
   end
 
   test('#manage_with_launchctl? returns false if management is disabled') do
-    assert_equal(false, Potluck::Service.new(manage: false).manage_with_launchctl?)
+    refute(Potluck::Service.new(manage: false).manage_with_launchctl?)
   end
 
   ##########################################################################################################
@@ -522,13 +522,13 @@ class ServiceTest < Minitest::Test
 
   test('.luanchctl? returns true if launchctl is available') do
     Potluck::Service.stub(:`, ->(_) { Kernel.send(:`, 'true') }) do
-      assert_equal(true, Potluck::Service.launchctl?)
+      assert(Potluck::Service.launchctl?)
     end
   end
 
   test('.luanchctl? returns false if launchctl is not available') do
     Potluck::Service.stub(:`, ->(_) { Kernel.send(:`, 'false') }) do
-      assert_equal(false, Potluck::Service.launchctl?)
+      refute(Potluck::Service.launchctl?)
     end
   end
 
