@@ -34,6 +34,41 @@ module Potluck
 
     attr_reader(:database)
 
+    # Public: Get the content of the launchctl plist file.
+    #
+    # Returns the String content.
+    def self.plist
+      versions = Dir["#{HOMEBREW_PREFIX}/opt/postgresql@*"].sort_by { |path| path.split('@').last.to_f }
+      version =
+        if versions.empty?
+          raise(PostgresError, "No Postgres installation found (try running `brew install postgresql@X`)")
+        else
+          File.basename(versions.last)
+        end
+
+      super(
+        <<~EOS
+          <key>EnvironmentVariables</key>
+          <dict>
+            <key>LC_ALL</key>
+            <string>C</string>
+          </dict>
+          <key>ProgramArguments</key>
+          <array>
+            <string>#{HOMEBREW_PREFIX}/opt/#{version}/bin/postgres</string>
+            <string>-D</string>
+            <string>#{HOMEBREW_PREFIX}/var/#{version}</string>
+          </array>
+          <key>WorkingDirectory</key>
+          <string>#{HOMEBREW_PREFIX}</string>
+          <key>StandardOutPath</key>
+          <string>#{HOMEBREW_PREFIX}/var/log/#{version}.log</string>
+          <key>StandardErrorPath</key>
+          <string>#{HOMEBREW_PREFIX}/var/log/#{version}.log</string>
+        EOS
+      )
+    end
+
     # Public: Create a new instance.
     #
     # config - Configuration Hash to pass to Sequel.connect.
@@ -149,41 +184,6 @@ module Potluck
       migrator.run
     ensure
       @logger.level = original_level if original_level
-    end
-
-    # Public: Get the content of the launchctl plist file.
-    #
-    # Returns the String content.
-    def self.plist
-      versions = Dir["#{HOMEBREW_PREFIX}/opt/postgresql@*"].sort_by { |path| path.split('@').last.to_f }
-      version =
-        if versions.empty?
-          raise(PostgresError, "No Postgres installation found (try running `brew install postgresql@X`)")
-        else
-          File.basename(versions.last)
-        end
-
-      super(
-        <<~EOS
-          <key>EnvironmentVariables</key>
-          <dict>
-            <key>LC_ALL</key>
-            <string>C</string>
-          </dict>
-          <key>ProgramArguments</key>
-          <array>
-            <string>#{HOMEBREW_PREFIX}/opt/#{version}/bin/postgres</string>
-            <string>-D</string>
-            <string>#{HOMEBREW_PREFIX}/var/#{version}</string>
-          </array>
-          <key>WorkingDirectory</key>
-          <string>#{HOMEBREW_PREFIX}</string>
-          <key>StandardOutPath</key>
-          <string>#{HOMEBREW_PREFIX}/var/log/#{version}.log</string>
-          <key>StandardErrorPath</key>
-          <string>#{HOMEBREW_PREFIX}/var/log/#{version}.log</string>
-        EOS
-      )
     end
 
     private

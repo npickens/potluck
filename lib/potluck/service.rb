@@ -12,6 +12,79 @@ module Potluck
     SERVICE_PREFIX = 'potluck.npickens.'
     LAUNCHCTL_ERROR_REGEX = /^-|\t[^0]\t/
 
+    # Public: Get the human-friendly name of the service.
+    #
+    # Returns the String name.
+    def self.pretty_name
+      @pretty_name ||= self.to_s.split('::').last
+    end
+
+    # Public: Get the computer-friendly name of the service.
+    #
+    # Returns the String name.
+    def self.service_name
+      @service_name ||= pretty_name.downcase
+    end
+
+    # Public: Get the name for the launchctl service.
+    #
+    # Returns the String name.
+    def self.launchctl_name
+      "#{SERVICE_PREFIX}#{service_name}"
+    end
+
+    # Public: Get the path to the launchctl plist file of the service.
+    #
+    # Returns the String path.
+    def self.plist_path
+      File.join(DIR, "#{launchctl_name}.plist")
+    end
+
+    # Public: Get the content of the launchctl plist file.
+    #
+    # Returns the String content.
+    def self.plist(content = '')
+      <<~EOS
+        <?xml version="1.0" encoding="UTF-8"?>
+        #{'<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.'\
+          '0.dtd">'}
+        <plist version="1.0">
+        <dict>
+          <key>Label</key>
+          <string>#{launchctl_name}</string>
+          <key>RunAtLoad</key>
+          <true/>
+          <key>KeepAlive</key>
+          <false/>
+          #{content.gsub(/^/, '  ').strip}
+        </dict>
+        </plist>
+      EOS
+    end
+
+    # Public: Write the service's launchctl plist file to disk.
+    #
+    # Returns nothing.
+    def self.write_plist
+      FileUtils.mkdir_p(File.dirname(plist_path))
+      File.write(plist_path, plist)
+    end
+
+    # Public: Check if launchctl is available.
+    #
+    # Returns the boolean result.
+    def self.launchctl?
+      defined?(@@launchctl) ? @@launchctl : (@@launchctl = `which launchctl 2>&1` && $? == 0)
+    end
+
+    # Public: Raise an error if launchctl is not available.
+    #
+    # Returns true if launchctl is available.
+    # Raises ServiceError if launchctl is not available.
+    def self.ensure_launchctl!
+      launchctl? || raise(ServiceError, "Cannot manage #{pretty_name}: launchctl not found")
+    end
+
     # Public: Create a new instance.
     #
     # logger: - Logger instance to use in place of sending output to stdin and stderr.
@@ -148,79 +221,6 @@ module Potluck
       else
         error ? $stderr.puts(message) : $stdout.puts(message)
       end
-    end
-
-    # Public: Get the human-friendly name of the service.
-    #
-    # Returns the String name.
-    def self.pretty_name
-      @pretty_name ||= self.to_s.split('::').last
-    end
-
-    # Public: Get the computer-friendly name of the service.
-    #
-    # Returns the String name.
-    def self.service_name
-      @service_name ||= pretty_name.downcase
-    end
-
-    # Public: Get the name for the launchctl service.
-    #
-    # Returns the String name.
-    def self.launchctl_name
-      "#{SERVICE_PREFIX}#{service_name}"
-    end
-
-    # Public: Get the path to the launchctl plist file of the service.
-    #
-    # Returns the String path.
-    def self.plist_path
-      File.join(DIR, "#{launchctl_name}.plist")
-    end
-
-    # Public: Get the content of the launchctl plist file.
-    #
-    # Returns the String content.
-    def self.plist(content = '')
-      <<~EOS
-        <?xml version="1.0" encoding="UTF-8"?>
-        #{'<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.'\
-          '0.dtd">'}
-        <plist version="1.0">
-        <dict>
-          <key>Label</key>
-          <string>#{launchctl_name}</string>
-          <key>RunAtLoad</key>
-          <true/>
-          <key>KeepAlive</key>
-          <false/>
-          #{content.gsub(/^/, '  ').strip}
-        </dict>
-        </plist>
-      EOS
-    end
-
-    # Public: Write the service's launchctl plist file to disk.
-    #
-    # Returns nothing.
-    def self.write_plist
-      FileUtils.mkdir_p(File.dirname(plist_path))
-      File.write(plist_path, plist)
-    end
-
-    # Public: Check if launchctl is available.
-    #
-    # Returns the boolean result.
-    def self.launchctl?
-      defined?(@@launchctl) ? @@launchctl : (@@launchctl = `which launchctl 2>&1` && $? == 0)
-    end
-
-    # Public: Raise an error if launchctl is not available.
-    #
-    # Returns true if launchctl is available.
-    # Raises ServiceError if launchctl is not available.
-    def self.ensure_launchctl!
-      launchctl? || raise(ServiceError, "Cannot manage #{pretty_name}: launchctl not found")
     end
 
     private
