@@ -46,70 +46,6 @@ module Potluck
       )
     end
 
-    # Public: Convert a hash to an Nginx configuration file content string. Keys are strings and values
-    # either strings or hashes. Symbol keys are used as special directives. A nil value in a hash will
-    # result in that key-value pair being omitted.
-    #
-    # hash   - Hash of String keys and String or Hash values to convert to the string content of an Nginx
-    #          configuration file.
-    # indent - Integer number of spaces to indent (used when the method is called recursively and should not
-    #          be set explicitly).
-    # repeat - String value to prepend to each entry of the hash (used when the method is called recursively
-    #          and should not be set explicitly).
-    #
-    # Examples
-    #
-    #   # {repeat: true, ...} will cause the parent hash's key to be prefixed to each line of the output.
-    #
-    #   Nginx.to_nginx_config(
-    #     'add_header' => {
-    #       repeat: true,
-    #       'X-Frame-Options' => 'DENY',
-    #       'X-Content-Type-Options' => 'nosniff',
-    #     }
-    #   )
-    #
-    #   # => "add_header X-Frame-Options DENY;
-    #   #     add_header X-Content-Type-Options nosniff;"
-    #
-    #   # {raw: "..." can be used to include a raw chunk of text rather than key-value pairs.
-    #
-    #   Nginx.to_nginx_config(
-    #     'location /' => {
-    #       raw: """
-    #         if ($scheme = https) { ... }
-    #         if ($host ~ ^www.) { ... }
-    #       """,
-    #     }
-    #   )
-    #
-    #   # => "location / {
-    #   #       if ($scheme = https) { ... }
-    #   #       if ($host ~ ^www.) { ... }
-    #   #     }"
-    #
-    # Returns the Nginx configuration String.
-    def self.to_nginx_config(hash, indent: 0, repeat: nil)
-      hash.each_with_object(+'') do |(k, v), config|
-        next if v.nil?
-        next if k == :repeat
-
-        config << (
-          if v.kind_of?(Hash)
-            if v[:repeat]
-              to_nginx_config(v, indent: indent, repeat: k)
-            else
-              "#{' ' * indent}#{k} {\n#{to_nginx_config(v, indent: indent + 2)}#{' ' * indent}}\n"
-            end
-          elsif k == :raw
-            "#{v.gsub(/^(?=.)/, ' ' * indent)}\n\n"
-          else
-            "#{' ' * indent}#{"#{repeat} " if repeat}#{k}#{" #{v}" unless v == true};\n"
-          end
-        )
-      end
-    end
-
     # Public: Create a new instance.
     #
     # hosts                    - String or Array of String hosts.
@@ -217,7 +153,71 @@ module Potluck
     #
     # Returns the String content.
     def config_file_content
-      self.class.to_nginx_config(config)
+      to_nginx_config(config)
+    end
+
+    # Internal: Convert a hash to an Nginx configuration file content string. Keys are strings and values
+    # either strings or hashes. Symbol keys are used as special directives. A nil value in a hash will
+    # result in that key-value pair being omitted.
+    #
+    # hash    - Hash of String keys and String or Hash values to convert to the string content of an Nginx
+    #           configuration file.
+    # indent: - Integer number of spaces to indent (used when the method is called recursively and should
+    #           not be set explicitly).
+    # repeat: - String value to prepend to each entry of the hash (used when the method is called
+    #           recursively and should not be set explicitly).
+    #
+    # Examples
+    #
+    #   # {repeat: true, ...} will cause the parent hash's key to be prefixed to each line of the output.
+    #
+    #   to_nginx_config(
+    #     'add_header' => {
+    #       repeat: true,
+    #       'X-Frame-Options' => 'DENY',
+    #       'X-Content-Type-Options' => 'nosniff',
+    #     }
+    #   )
+    #
+    #   # => "add_header X-Frame-Options DENY;
+    #   #     add_header X-Content-Type-Options nosniff;"
+    #
+    #   # {raw: "..." can be used to include a raw chunk of text rather than key-value pairs.
+    #
+    #   to_nginx_config(
+    #     'location /' => {
+    #       raw: """
+    #         if ($scheme = https) { ... }
+    #         if ($host ~ ^www.) { ... }
+    #       """,
+    #     }
+    #   )
+    #
+    #   # => "location / {
+    #   #       if ($scheme = https) { ... }
+    #   #       if ($host ~ ^www.) { ... }
+    #   #     }"
+    #
+    # Returns the Nginx configuration String.
+    def to_nginx_config(hash, indent: 0, repeat: nil)
+      hash.each_with_object(+'') do |(k, v), config|
+        next if v.nil?
+        next if k == :repeat
+
+        config << (
+          if v.kind_of?(Hash)
+            if v[:repeat]
+              to_nginx_config(v, indent: indent, repeat: k)
+            else
+              "#{' ' * indent}#{k} {\n#{to_nginx_config(v, indent: indent + 2)}#{' ' * indent}}\n"
+            end
+          elsif k == :raw
+            "#{v.gsub(/^(?=.)/, ' ' * indent)}\n\n"
+          else
+            "#{' ' * indent}#{"#{repeat} " if repeat}#{k}#{" #{v}" unless v == true};\n"
+          end
+        )
+      end
     end
 
     # Internal: Get a hash representation of the Nginx configuration file content. Any configuration passed
