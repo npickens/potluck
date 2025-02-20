@@ -17,8 +17,8 @@ module Potluck
     CONFIG_NAME_INACTIVE = 'nginx-stopped.conf'
     ACTIVE_CONFIG_PATTERN = File.join(DIR, '*', CONFIG_NAME_ACTIVE).freeze
 
-    TEST_CONFIG_REGEX = /nginx: configuration file (?<config>.+) test (failed|is successful)/.freeze
-    INCLUDE_REGEX = /^ *include +#{Regexp.escape(ACTIVE_CONFIG_PATTERN)} *;/.freeze
+    TEST_CONFIG_REGEX = /nginx: configuration file (?<config>.+) test (failed|is successful)/
+    INCLUDE_REGEX = /^ *include +#{Regexp.escape(ACTIVE_CONFIG_PATTERN)} *;/
 
     NON_LAUNCHCTL_COMMANDS = {
       status: 'ps aux | grep \'[n]ginx: master process\'',

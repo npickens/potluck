@@ -23,8 +23,8 @@ module Potluck
   # A Ruby interface for controlling and connecting to Postgres. Uses the Sequel gem to connect and perform
   # automatic role and database creation, as well as for utility methods such as database schema migration.
   class Postgres < Service
-    ROLE_NOT_FOUND_REGEX = /role .* does not exist/.freeze
-    DATABASE_NOT_FOUND_REGEX = /database .* does not exist/.freeze
+    ROLE_NOT_FOUND_REGEX = /role .* does not exist/
+    DATABASE_NOT_FOUND_REGEX = /database .* does not exist/
 
     STARTING_UP_STRING = 'the database system is starting up'
     STARTING_UP_TIMEOUT = 30

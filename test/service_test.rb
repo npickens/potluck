@@ -12,7 +12,7 @@ class ServiceTest < Minitest::Test
   NULL_LOGGER = Logger.new('/dev/null').freeze
   MANAGE = {
     status: 'true',
-    status_error_regex: /oops/.freeze,
+    status_error_regex: /oops/,
     start: 'echo start',
     stop: 'echo stop',
   }.freeze

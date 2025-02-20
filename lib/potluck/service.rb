@@ -10,7 +10,7 @@ module Potluck
   # parent class for service-specific child classes.
   class Service
     SERVICE_PREFIX = 'potluck.npickens.'
-    LAUNCHCTL_ERROR_REGEX = /^-|\t[^0]\t/.freeze
+    LAUNCHCTL_ERROR_REGEX = /^-|\t[^0]\t/
 
     # Public: Create a new instance.
     #
