@@ -211,14 +211,14 @@ module Potluck
       run('nginx -s reload')
     end
 
-    # Public: Return the content for the Nginx configuration file.
+    private
+
+    # Internal: Return the content for the Nginx configuration file.
     #
     # Returns the String content.
     def config_file_content
       self.class.to_nginx_config(config)
     end
-
-    private
 
     # Internal: Get a hash representation of the Nginx configuration file content. Any configuration passed
     # to Nginx.new is deep-merged into a base configuration hash, meaning nested hashes are merged rather

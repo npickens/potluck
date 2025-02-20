@@ -2,6 +2,7 @@
 
 ## Upcoming (Unreleased)
 
+* Make `Nginx#config_file_content` private
 * **Add Config class to allow for custom directory and Homebrew locations**
 * **Require Ruby 3.0.0 or later**
 * **Deprecate `Postgres#migrate`**
