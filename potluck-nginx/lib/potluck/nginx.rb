@@ -15,7 +15,7 @@ module Potluck
   class Nginx < Service
     CONFIG_NAME_ACTIVE = 'nginx.conf'
     CONFIG_NAME_INACTIVE = 'nginx-stopped.conf'
-    ACTIVE_CONFIG_PATTERN = File.join(DIR, '*', CONFIG_NAME_ACTIVE).freeze
+    ACTIVE_CONFIG_PATTERN = File.join(Potluck.config.dir, '*', CONFIG_NAME_ACTIVE).freeze
 
     TEST_CONFIG_REGEX = /nginx: configuration file (?<config>.+) test (failed|is successful)/
     INCLUDE_REGEX = /^ *include +#{Regexp.escape(ACTIVE_CONFIG_PATTERN)} *;/
@@ -34,14 +34,14 @@ module Potluck
         <<~EOS
           <key>ProgramArguments</key>
           <array>
-            <string>#{HOMEBREW_PREFIX}/opt/nginx/bin/nginx</string>
+            <string>#{Potluck.config.homebrew_prefix}/opt/nginx/bin/nginx</string>
             <string>-g</string>
             <string>daemon off;</string>
           </array>
           <key>StandardOutPath</key>
-          <string>#{HOMEBREW_PREFIX}/var/log/nginx/access.log</string>
+          <string>#{Potluck.config.homebrew_prefix}/var/log/nginx/access.log</string>
           <key>StandardErrorPath</key>
-          <string>#{HOMEBREW_PREFIX}/var/log/nginx/error.log</string>
+          <string>#{Potluck.config.homebrew_prefix}/var/log/nginx/error.log</string>
         EOS
       )
     end
@@ -147,7 +147,7 @@ module Potluck
       @port = port
 
       @ensure_host_entries = ensure_host_entries
-      @dir = File.join(DIR, @host)
+      @dir = File.join(Potluck.config.dir, @host)
       @ssl = SSL.new(self, @dir, @host, **ssl) if ssl
 
       @scheme = @ssl ? 'https' : 'http'

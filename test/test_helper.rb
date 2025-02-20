@@ -24,9 +24,6 @@ end
 module TestHelper
   TMP_DIR = File.join(__dir__, 'tmp').freeze
 
-  Potluck.send(:remove_const, :DIR)
-  Potluck.const_set(:DIR, TMP_DIR)
-
   def self.included(klass)
     klass.extend(ClassMethods)
   end

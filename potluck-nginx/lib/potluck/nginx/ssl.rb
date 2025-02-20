@@ -88,7 +88,8 @@ module Potluck
           capture_stderr: false)
         @nginx.run("openssl dhparam -out #{@dhparam_file} 2048", capture_stderr: false)
 
-        if IS_MACOS
+        # Add the cert to the keychain if running on macOS.
+        if !!RUBY_PLATFORM[/darwin/]
           @nginx.log('Adding cert to keychain...')
 
           @nginx.run(

@@ -37,7 +37,7 @@ module Potluck
     #
     # Returns the String path.
     def self.plist_path
-      File.join(DIR, "#{launchctl_name}.plist")
+      File.join(Potluck.config.dir, "#{launchctl_name}.plist")
     end
 
     # Public: Get the content of the launchctl plist file.
