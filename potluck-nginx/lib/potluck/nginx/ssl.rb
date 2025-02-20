@@ -116,7 +116,7 @@ module Potluck
           req_extensions     = req_ext
 
           [ req_distinguished_name ]
-          commonName          = #{@host}
+          commonName = #{@host}
 
           [ req_ext ]
           subjectAltName = @alt_names
