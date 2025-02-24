@@ -38,13 +38,7 @@ module Potluck
     #
     # Returns the String content.
     def self.plist
-      versions = Dir["#{HOMEBREW_PREFIX}/opt/postgresql@*"].sort_by { |path| path.split('@').last.to_f }
-      version =
-        if versions.empty?
-          raise(PostgresError, "No Postgres installation found (try running `brew install postgresql@X`)")
-        else
-          File.basename(versions.last)
-        end
+      dir = postgres_dir
 
       super(
         <<~EOS
@@ -55,18 +49,34 @@ module Potluck
           </dict>
           <key>ProgramArguments</key>
           <array>
-            <string>#{HOMEBREW_PREFIX}/opt/#{version}/bin/postgres</string>
+            <string>#{Potluck.config.homebrew_prefix}/opt/#{dir}/bin/postgres</string>
             <string>-D</string>
-            <string>#{HOMEBREW_PREFIX}/var/#{version}</string>
+            <string>#{Potluck.config.homebrew_prefix}/var/#{dir}</string>
           </array>
           <key>WorkingDirectory</key>
-          <string>#{HOMEBREW_PREFIX}</string>
+          <string>#{Potluck.config.homebrew_prefix}</string>
           <key>StandardOutPath</key>
-          <string>#{HOMEBREW_PREFIX}/var/log/#{version}.log</string>
+          <string>#{Potluck.config.homebrew_prefix}/var/log/#{dir}.log</string>
           <key>StandardErrorPath</key>
-          <string>#{HOMEBREW_PREFIX}/var/log/#{version}.log</string>
+          <string>#{Potluck.config.homebrew_prefix}/var/log/#{dir}.log</string>
         EOS
       )
+    end
+
+    # Public: Get the directory of the latest Homebrew-installed Postgres version.
+    #
+    # Returns the String path.
+    # Raises PostgresError if no Homebrew Postgres installation is found.
+    def self.postgres_dir
+      versions = Dir[File.join(Potluck.config.homebrew_prefix, 'opt', 'postgresql@*')].sort_by do |path|
+        path.split('@').last.to_f
+      end
+
+      if versions.empty?
+        raise(PostgresError, "No Postgres installation found (try running `brew install postgresql@X`)")
+      end
+
+      File.basename(versions.last)
     end
 
     # Public: Create a new instance.
