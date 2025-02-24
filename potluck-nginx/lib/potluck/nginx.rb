@@ -292,7 +292,7 @@ module Potluck
                 end}
 
                 if ($scheme = #{@other_scheme}) { set $s #{@scheme}; set $r 1; }
-                if ($http_host ~ :([0-9]+)$) { set $p :$1; set $port $1; }
+                if ($http_host ~ :([0-9]+)$) { set $p :#{@ssl ? '4433' : '8080'}; set $port $1; }
                 if ($request_uri ~ ^([^\\?]+)(\\?+.*)?$) { set $u $1; set $q $2; }
 
                 #{'if ($u ~ //) { set $u $uri; set $r 1; }' if @multiple_slashes == false}
