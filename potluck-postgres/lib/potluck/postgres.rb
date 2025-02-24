@@ -27,10 +27,10 @@ module Potluck
     DATABASE_NOT_FOUND_REGEX = /database .* does not exist/
 
     STARTING_UP_STRING = 'the database system is starting up'
-    STARTING_UP_TIMEOUT = 30
+    STARTING_UP_TRIES = 30
 
     CONNECTION_REFUSED_STRING = 'connection refused'
-    CONNECTION_REFUSED_TIMEOUT = 3
+    CONNECTION_REFUSED_TRIES = 3
 
     attr_reader(:database)
 
@@ -123,10 +123,10 @@ module Potluck
           database_created = true
           create_database
           retry
-        elsif message.include?(STARTING_UP_STRING) && tries < STARTING_UP_TIMEOUT
+        elsif message.include?(STARTING_UP_STRING) && tries < STARTING_UP_TRIES
           sleep(1)
           retry
-        elsif message.include?(CONNECTION_REFUSED_STRING) && tries < CONNECTION_REFUSED_TIMEOUT
+        elsif message.include?(CONNECTION_REFUSED_STRING) && tries < CONNECTION_REFUSED_TRIES
           sleep(1)
           retry
         elsif message.include?(CONNECTION_REFUSED_STRING)
