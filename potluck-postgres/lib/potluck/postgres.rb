@@ -100,6 +100,10 @@ module Potluck
     # Public: Connect to the configured Postgres database.
     #
     # Returns nothing.
+    # Raises Sequel::DatabaseConnectionError if connecting fails.
+    # Raises PostgresError if role creation was attempted and failed.
+    # Raises PostgresError if database creation was attempted and failed.
+    # Raises PostgresError if permission grant was attempted and failed.
     def connect
       role_created = false
       database_created = false
@@ -129,8 +133,6 @@ module Potluck
         elsif message.include?(CONNECTION_REFUSED_STRING) && tries < CONNECTION_REFUSED_TRIES
           sleep(1)
           retry
-        elsif message.include?(CONNECTION_REFUSED_STRING)
-          raise(PostgresError.new(e.message.strip, e))
         else
           raise
         end

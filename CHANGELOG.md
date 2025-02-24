@@ -2,6 +2,7 @@
 
 ## Upcoming (Unreleased)
 
+* Raise Sequel's errors instead of wrapping them in `Postgres#connect`
 * **Allow Nginx ports to be configured**
 * Use correct port when performing Nginx URL normalization redirect
 * Convert `Nginx.to_nginx_config` to instance method and make it private

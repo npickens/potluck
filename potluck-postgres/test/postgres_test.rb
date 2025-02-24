@@ -23,5 +23,28 @@ class PostgresTest < Minitest::Test
     Potluck.config = Potluck::Config.new
   end
 
+  test('#connect retries when connection is refused and then raises original error') do
+    postgres = Potluck::Postgres.new({})
+
+    tries = 0
+    error = nil
+    error_message = 'connection to [...] failed: Connection refused'
+    sequel_connect = lambda do |*, **|
+      tries += 1
+      raise(Sequel::DatabaseConnectionError, error_message)
+    end
+
+    postgres.stub(:sleep, nil) do
+      Sequel.stub(:connect, sequel_connect) do
+        error = assert_raises(Sequel::DatabaseConnectionError) do
+          postgres.connect
+        end
+      end
+    end
+
+    assert_equal(error_message, error.message)
+    assert_equal(3, tries)
+  end
+
   # More tests coming...
 end
