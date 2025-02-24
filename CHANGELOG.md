@@ -2,6 +2,7 @@
 
 ## Upcoming (Unreleased)
 
+* **Allow Nginx ports to be configured**
 * Use correct port when performing Nginx URL normalization redirect
 * Convert `Nginx.to_nginx_config` to instance method and make it private
 * Make `Nginx#config_file_content` private

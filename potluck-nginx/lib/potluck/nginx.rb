@@ -2,6 +2,7 @@
 
 require('fileutils')
 require('potluck')
+require_relative('nginx/config')
 require_relative('nginx/ssl')
 require_relative('nginx/util')
 require_relative('nginx/version')
@@ -25,6 +26,28 @@ module Potluck
       start: 'nginx',
       stop: 'nginx -s stop',
     }.freeze
+
+    @config = Config.new
+
+    class << self
+      attr_accessor(:config)
+    end
+
+    # Public: Change settings.
+    #
+    # Yields the Config instance used by the Nginx service.
+    #
+    # Examples
+    #
+    #   Potluck::Nginx.configure do |config|
+    #     config.http_port = 8181
+    #     config.https_port = 4321
+    #   end
+    #
+    # Returns nothing.
+    def self.configure
+      yield(config)
+    end
 
     # Public: Get the content of the launchctl plist file.
     #
@@ -228,6 +251,7 @@ module Potluck
     def config
       host_subdomains_regex = ([@host] + @subdomains).join('|')
       hosts_subdomains_regex = (@hosts + @subdomains).join('|')
+      port = @ssl ? self.class.config.https_port : self.class.config.http_port
 
       config = {
         "upstream #{@host}" => {
@@ -242,10 +266,10 @@ module Potluck
 
             'listen' => {
               repeat: true,
-              '8080' => true,
-              '[::]:8080' => true,
-              '4433 ssl http2' => @ssl ? true : nil,
-              '[::]:4433 ssl http2' => @ssl ? true : nil,
+              "#{self.class.config.http_port}" => true,
+              "[::]:#{self.class.config.http_port}" => true,
+              "#{self.class.config.https_port} ssl http2" => @ssl ? true : nil,
+              "[::]:#{self.class.config.https_port} ssl http2" => @ssl ? true : nil,
             },
             'server_name' => (@hosts + @subdomains).join(' '),
 
@@ -292,7 +316,7 @@ module Potluck
                 end}
 
                 if ($scheme = #{@other_scheme}) { set $s #{@scheme}; set $r 1; }
-                if ($http_host ~ :([0-9]+)$) { set $p :#{@ssl ? '4433' : '8080'}; set $port $1; }
+                if ($http_host ~ :([0-9]+)$) { set $p :#{port}; set $port $1; }
                 if ($request_uri ~ ^([^\\?]+)(\\?+.*)?$) { set $u $1; set $q $2; }
 
                 #{'if ($u ~ //) { set $u $uri; set $r 1; }' if @multiple_slashes == false}
