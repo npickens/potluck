@@ -10,11 +10,16 @@ module Potluck
 
     # Public: Create a new instance.
     #
-    # dir:             - String path to a directory to store files in.
-    # homebrew_prefix: - String path to Homebrew's root directory.
-    def initialize(dir: nil, homebrew_prefix: nil)
-      self.dir = dir if dir
-      self.homebrew_prefix = homebrew_prefix if homebrew_prefix
+    # Yields the instance being created.
+    #
+    # Examples
+    #
+    #   Config.new do |config|
+    #     config.dir = '/etc/potluck'
+    #     config.homebrew_prefix = '/custom/brew'
+    #   end
+    def initialize
+      yield(self) if block_given?
     end
 
     # Public: Get the directory path setting.

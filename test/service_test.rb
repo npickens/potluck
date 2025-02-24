@@ -29,7 +29,7 @@ class ServiceTest < Minitest::Test
     FileUtils.rm_rf(TMP_DIR)
     FileUtils.mkdir_p(TMP_DIR)
 
-    Potluck.config = Potluck::Config.new(dir: TMP_DIR)
+    Potluck.config = Potluck::Config.new { |c| c.dir = TMP_DIR }
   end
 
   def teardown

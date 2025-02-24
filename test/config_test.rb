@@ -17,6 +17,16 @@ class ConfigTest < Minitest::Test
   ## Tests                                                                                                ##
   ##########################################################################################################
 
+  test('constructor yields the instance being created if a block is given') do
+    yielded_object = nil
+
+    config = Potluck::Config.new do |config|
+      yielded_object = config
+    end
+
+    assert_equal(config, yielded_object)
+  end
+
   test('uses ~/.potluck as default dir') do
     assert_equal(File.expand_path('~/.potluck'), @config.dir)
   end
