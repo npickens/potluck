@@ -19,5 +19,19 @@ class NginxTest < Minitest::Test
     assert_equal(Potluck::Nginx.config, yielded_object)
   end
 
+  test('.plist returns plist content using configured Homebrew prefix') do
+    Potluck.configure do |config|
+      config.homebrew_prefix = '/hello/world'
+    end
+
+    plist = Potluck::Nginx.plist
+
+    assert_includes(plist, '<string>/hello/world/opt/nginx/bin/nginx</string>')
+    assert_includes(plist, '<string>/hello/world/var/log/nginx/access.log</string>')
+    assert_includes(plist, '<string>/hello/world/var/log/nginx/error.log</string>')
+  ensure
+    Potluck.config = Potluck::Config.new
+  end
+
   # More tests coming...
 end
