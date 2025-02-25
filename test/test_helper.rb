@@ -9,18 +9,6 @@ require('minitest/autorun')
 require('minitest/reporters')
 require('potluck')
 
-module Minitest
-  def self.plugin_index_init(options)
-    return unless options[:filter].to_i.to_s == options[:filter]
-
-    options[:filter] = "/^test_#{options[:filter]}: /"
-  end
-
-  register_plugin('index')
-
-  Reporters.use!(Reporters::ProgressReporter.new)
-end
-
 module TestHelper
   TMP_DIR = File.join(__dir__, 'tmp').freeze
 
@@ -42,4 +30,16 @@ module TestHelper
       define_method(method_name, &block)
     end
   end
+end
+
+module Minitest
+  def self.plugin_index_init(options)
+    return unless options[:filter].to_i.to_s == options[:filter]
+
+    options[:filter] = "/^test_#{options[:filter]}: /"
+  end
+
+  register_plugin('index')
+
+  Reporters.use!(Reporters::ProgressReporter.new)
 end
