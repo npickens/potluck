@@ -101,7 +101,6 @@ module Potluck
       super(**kwargs)
 
       @hosts = Array(hosts).map { |h| h.sub(/^www\./, '') }.uniq
-      @hosts += @hosts.map { |h| "www.#{h}" }
       @host = @hosts.first
       @port = port
 
@@ -109,8 +108,6 @@ module Potluck
       @dir = File.join(Potluck.config.dir, @host)
       @ssl = SSL.new(self, @dir, @host, **ssl) if ssl
 
-      @scheme = @ssl ? 'https' : 'http'
-      @other_scheme = @ssl ? 'http' : 'https'
       @one_host = !!one_host
       @subdomains = Array(subdomains)
       @www = www
@@ -230,12 +227,16 @@ module Potluck
         config << (
           if v.kind_of?(Hash)
             if v[:repeat]
-              to_nginx_config(v, indent: indent, repeat: k)
+              "#{"\n" unless config == ''}" \
+              "#{to_nginx_config(v, indent: indent, repeat: k)}\n"
             else
-              "#{' ' * indent}#{k} {\n#{to_nginx_config(v, indent: indent + 2)}#{' ' * indent}}\n"
+              "#{"\n" unless config == ''}" \
+              "#{' ' * indent}#{k} {\n" \
+              "#{to_nginx_config(v, indent: indent + 2)}" \
+              "#{' ' * indent}}\n"
             end
           elsif k == :raw
-            "#{v.gsub(/^(?=.)/, ' ' * indent)}\n\n"
+            "#{v.gsub(/^(?=.)/, ' ' * indent)}\n"
           else
             "#{' ' * indent}#{"#{repeat} " if repeat}#{k}#{" #{v}" unless v == true};\n"
           end
@@ -249,33 +250,87 @@ module Potluck
     #
     # Returns the Hash configuration.
     def config
-      host_subdomains_regex = ([@host] + @subdomains).join('|')
-      hosts_subdomains_regex = (@hosts + @subdomains).join('|')
-      port = @ssl ? self.class.config.https_port : self.class.config.http_port
+      protocol = @ssl ? 'https://' : 'http://'
+      normalized_port = @ssl ? self.class.config.https_port : self.class.config.http_port
 
-      config = {
+      host_map = {
+        **@hosts.to_h do |h|
+          ["www.#{h}", "#{'www.' unless @www == false}#{@one_host ? @host : h}"]
+        end,
+
+        **@hosts.to_h do |h|
+          [h, "#{'www.' if @www}#{@one_host ? @host : h}"]
+        end,
+      }
+      host_map.reject! { |k, v| k == v }
+
+      {
         "upstream #{@host}" => {
           'server' => "127.0.0.1:#{@port}",
         },
 
+        'map $host $host_normalized' => {
+          'default' => '$host',
+          **host_map,
+        },
+
+        'map $http_host $port' => {
+          'default' => "''",
+          '~(:[0-9]+)$' => '$1',
+        },
+
+        'map $http_host $port_normalized' => {
+          'default' => "''",
+          '~:[0-9]+$' => ":#{normalized_port}",
+        },
+
+        'map $http_host $x_forwarded_port' => {
+          'default' => normalized_port.to_s,
+          '~:([0-9]+)$' => '$1',
+        },
+
+        'map $uri $uri_normalized' => {
+          'default' => '$uri',
+          '~^(.*/[^/.]+)/+$' => ('$1' if @trailing_slash == false),
+          '~^(.*/[^/.]+)$' => ('$1/' if @trailing_slash),
+        },
+
+        'map $request_uri $q' => {
+          'default' => "''",
+          '~\\?' => '?',
+        },
+
+        'map $q$args $args_normalized' => {
+          'default' => '$q$args',
+          '~^\\?+([^\\?].*)$' => ('?$1' if @multiple_question_marks == false),
+          '~^(\\?+)$' =>
+            if @trailing_question_mark == false
+              "''"
+            elsif @multiple_question_marks == false
+              '?'
+            end,
+          "''" => ('?' if @trailing_question_mark),
+        },
+
         'server' => Util.deep_merge(
           {
-            'charset' => 'UTF-8',
-            'access_log' => File.join(@dir, 'nginx-access.log'),
-            'error_log' => File.join(@dir, 'nginx-error.log'),
+            'server_name' => (@hosts + @hosts.map { |h| "www.#{h}" } + @subdomains).join(' '),
 
             'listen' => {
               repeat: true,
-              "#{self.class.config.http_port}" => true,
+              self.class.config.http_port.to_s => true,
               "[::]:#{self.class.config.http_port}" => true,
               "#{self.class.config.https_port} ssl http2" => @ssl ? true : nil,
               "[::]:#{self.class.config.https_port} ssl http2" => @ssl ? true : nil,
             },
-            'server_name' => (@hosts + @subdomains).join(' '),
 
+            'charset' => 'UTF-8',
+            'access_log' => File.join(@dir, 'nginx-access.log'),
+            'error_log' => File.join(@dir, 'nginx-error.log'),
+            'merge_slashes' => @multiple_slashes == false ? 'on' : 'off',
             'gzip' => 'on',
-            'gzip_types' => 'application/javascript application/json application/xml text/css '\
-              'text/javascript text/plain',
+            'gzip_types' => 'application/javascript application/json application/xml text/css ' \
+                            'text/javascript text/plain',
 
             'add_header' => {
               repeat: true,
@@ -290,54 +345,13 @@ module Potluck
 
           {
             'location /' => {
-              raw: """
-                if ($host !~ ^#{hosts_subdomains_regex}$) { return 404; }
+              raw: <<~CONFIG,
+                set $normalized #{protocol}$host_normalized$port_normalized$uri_normalized$args_normalized;
 
-                set $r 0;
-                set $s $scheme;
-                set $h $host;
-                set $port #{@ssl ? '443' : '80'};
-                set $p '';
-                set $u '';
-                set $q '';
-
-                #{if @www.nil? && @one_host == false
-                  nil
-                elsif @www.nil? && @one_host == true
-                  "if ($host !~ ^(www.)?#{host_subdomains_regex}$) { set $h $1#{@host}; set $r 1; }"
-                elsif @www == false && @one_host == false
-                  "if ($host ~ ^www.(.+)$) { set $h $1; set $r 1; }"
-                elsif @www == false && @one_host == true
-                  "if ($host !~ ^#{host_subdomains_regex}$) { set $h #{@host}; set $r 1; }"
-                elsif @www == true && @one_host == false
-                  "if ($host !~ ^www.(.+)$) { set $h $1; set $r 1; }"
-                elsif @www == true && @one_host == true
-                  "if ($host !~ ^www.#{host_subdomains_regex}$) { set $h www.#{@host}; set $r 1; }"
-                end}
-
-                if ($scheme = #{@other_scheme}) { set $s #{@scheme}; set $r 1; }
-                if ($http_host ~ :([0-9]+)$) { set $p :#{port}; set $port $1; }
-                if ($request_uri ~ ^([^\\?]+)(\\?+.*)?$) { set $u $1; set $q $2; }
-
-                #{'if ($u ~ //) { set $u $uri; set $r 1; }' if @multiple_slashes == false}
-                #{'if ($q ~ ^\?\?+(.*)$) { set $q ?$1; set $r 1; }' if @multiple_question_marks == false}
-
-                #{if @trailing_question_mark == false
-                  'if ($q ~ \?+$) { set $q \'\'; set $r 1; }'
-                elsif @trailing_question_mark == true
-                  'if ($q !~ .) { set $q ?; set $r 1; }'
-                end}
-                #{if @trailing_slash == false
-                  'if ($u ~ (.+?)/+$) { set $u $1; set $r 1; }'
-                elsif @trailing_slash == true
-                  'if ($u ~ [^/]$) { set $u $u/; set $r 1; }'
-                end}
-
-                set $mr $request_method$r;
-
-                if ($mr ~ ^(GET|HEAD)1$) { return 301 $s://$h$p$u$q; }
-                if ($mr ~ 1$) { return 308 $s://$h$p$u$q; }
-              """.strip.gsub(/^ +/, '').gsub(/\n{3,}/, "\n\n"),
+                if ($normalized != '$scheme://$host$port$request_uri') {
+                  return 308 $normalized;
+                }
+              CONFIG
 
               'proxy_pass' => "http://#{@host}",
               'proxy_redirect' => 'off',
@@ -347,7 +361,7 @@ module Potluck
                 'X-Real-IP' => '$remote_addr',
                 'X-Forwarded-For' => '$proxy_add_x_forwarded_for',
                 'X-Forwarded-Proto' => @ssl ? 'https' : 'http',
-                'X-Forwarded-Port' => '$port',
+                'X-Forwarded-Port' => '$x_forwarded_port',
               },
             },
           },
@@ -355,8 +369,6 @@ module Potluck
           @additional_config,
         )
       }
-
-      config
     end
 
     # Internal: Write the Nginx configuration to the (inactive) configuration file.
