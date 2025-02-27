@@ -87,7 +87,7 @@ module Potluck
     #                            (true), exclude it (false), or allow either (nil).
     # trailing_question_mark:  - Boolean specifying if URLs should be normalized to include a trailing
     #                            question mark (true), exclude it (false), or allow either (nil).
-    # config:                  - Nginx configuration Hash (see #config).
+    # config:                  - Nginx server block configuration Hash (see #config).
     # ensure_host_entries:     - Booelan specifying if hosts should be added to system /etc/hosts file as
     #                            mappings to localhost.
     # kwargs                   - Hash of keyword arguments to pass to Service.new.
@@ -224,33 +224,49 @@ module Potluck
         next if v.nil?
         next if k == :repeat
 
-        config << (
-          if v.kind_of?(Hash)
-            if v[:repeat]
-              "#{"\n" unless config == ''}" \
-              "#{to_nginx_config(v, indent: indent, repeat: k)}\n"
-            else
-              "#{"\n" unless config == ''}" \
-              "#{' ' * indent}#{k} {\n" \
-              "#{to_nginx_config(v, indent: indent + 2)}" \
-              "#{' ' * indent}}\n"
-            end
-          elsif k == :raw
-            "#{v.gsub(/^(?=.)/, ' ' * indent)}\n"
-          else
-            "#{' ' * indent}#{"#{repeat} " if repeat}#{k}#{" #{v}" unless v == true};\n"
+        if v.kind_of?(Hash) && v[:repeat]
+          config << to_nginx_config(v, indent: indent, repeat: k)
+        elsif v.kind_of?(Hash) || v.kind_of?(Array)
+          [v].flatten.each do |item|
+            next if item.nil?
+
+            config << "\n" unless config.empty? || indent > 0
+            config << "#{' ' * indent}#{k} {\n" \
+                      "#{to_nginx_config(item, indent: indent + 2)}" \
+                      "#{' ' * indent}}\n"
           end
-        )
+        elsif k == :raw
+          config << "#{v.strip.gsub(/^(?=.)/, ' ' * indent).rstrip}\n"
+        else
+          config << "#{' ' * indent}#{"#{repeat} " if repeat}#{k}#{" #{v}" unless v == true};\n"
+        end
       end
     end
 
     # Internal: Get a hash representation of the Nginx configuration file content. Any configuration passed
-    # to Nginx.new is deep-merged into a base configuration hash, meaning nested hashes are merged rather
-    # than overwritten (see Util.deep_merge).
+    # to Nginx.new is deep-merged into the base configuration hash for the server block(s), meaning nested
+    # hashes are merged rather than overwritten (see Util.deep_merge).
     #
     # Returns the Hash configuration.
     def config
-      protocol = @ssl ? 'https://' : 'http://'
+      {
+        "upstream #{@host}" => {
+          'server' => "127.0.0.1:#{@port}",
+        },
+
+        **config_maps,
+
+        'server' => [
+          Util.deep_merge(config_server(ssl: false), @additional_config),
+          (Util.deep_merge(config_server(ssl: true), @additional_config) if @ssl),
+        ],
+      }
+    end
+
+    # Internal: Get a hash representation of the Nginx configuration file URL normalization maps.
+    #
+    # Returns the Hash configuration.
+    def config_maps
       normalized_port = @ssl ? self.class.config.https_port : self.class.config.http_port
 
       host_map = {
@@ -262,13 +278,10 @@ module Potluck
           [h, "#{'www.' if @www}#{@one_host ? @host : h}"]
         end,
       }
+
       host_map.reject! { |k, v| k == v }
 
       {
-        "upstream #{@host}" => {
-          'server' => "127.0.0.1:#{@port}",
-        },
-
         'map $host $host_normalized' => {
           'default' => '$host',
           **host_map,
@@ -311,64 +324,72 @@ module Potluck
             end,
           "''" => ('?' if @trailing_question_mark),
         },
-
-        'server' => Util.deep_merge(
-          {
-            'server_name' => (@hosts + @hosts.map { |h| "www.#{h}" } + @subdomains).join(' '),
-
-            'listen' => {
-              repeat: true,
-              self.class.config.http_port.to_s => true,
-              "[::]:#{self.class.config.http_port}" => true,
-              "#{self.class.config.https_port} ssl http2" => @ssl ? true : nil,
-              "[::]:#{self.class.config.https_port} ssl http2" => @ssl ? true : nil,
-            },
-
-            'charset' => 'UTF-8',
-            'access_log' => File.join(@dir, 'nginx-access.log'),
-            'error_log' => File.join(@dir, 'nginx-error.log'),
-            'merge_slashes' => @multiple_slashes == false ? 'on' : 'off',
-            'gzip' => 'on',
-            'gzip_types' => 'application/javascript application/json application/xml text/css ' \
-                            'text/javascript text/plain',
-
-            'add_header' => {
-              repeat: true,
-              'Referrer-Policy' => '\'same-origin\' always',
-              'X-Frame-Options' => '\'DENY\' always',
-              'X-XSS-Protection' => '\'1; mode=block\' always',
-              'X-Content-Type-Options' => '\'nosniff\' always',
-            },
-          },
-
-          @ssl ? @ssl.config : {},
-
-          {
-            'location /' => {
-              raw: <<~CONFIG,
-                set $normalized #{protocol}$host_normalized$port_normalized$uri_normalized$args_normalized;
-
-                if ($normalized != '$scheme://$host$port$request_uri') {
-                  return 308 $normalized;
-                }
-              CONFIG
-
-              'proxy_pass' => "http://#{@host}",
-              'proxy_redirect' => 'off',
-              'proxy_set_header' => {
-                repeat: true,
-                'Host' => '$http_host',
-                'X-Real-IP' => '$remote_addr',
-                'X-Forwarded-For' => '$proxy_add_x_forwarded_for',
-                'X-Forwarded-Proto' => @ssl ? 'https' : 'http',
-                'X-Forwarded-Port' => '$x_forwarded_port',
-              },
-            },
-          },
-
-          @additional_config,
-        )
       }
+    end
+
+    # Internal: Get a hash representation of the Nginx configuration file server block.
+    #
+    # Returns the Hash configuration.
+    def config_server(ssl:)
+      protocol = @ssl ? 'https://' : 'http://'
+
+      hash = {
+        'server_name' => (@hosts + @hosts.map { |h| "www.#{h}" } + @subdomains).join(' '),
+        'listen' => {repeat: true},
+      }
+
+      if ssl
+        hash['listen'].merge!(
+          "#{self.class.config.https_port} ssl" => true,
+          "[::]:#{self.class.config.https_port} ssl" => true,
+        )
+        hash['http2'] = 'on'
+        hash.merge!(@ssl.config)
+      else
+        hash['listen'].merge!(
+          self.class.config.http_port.to_s => true,
+          "[::]:#{self.class.config.http_port}" => true,
+        )
+      end
+
+      hash.merge!(
+        'charset' => 'UTF-8',
+        'gzip' => 'on',
+        'gzip_types' => 'application/javascript application/json application/xml text/css ' \
+                        'text/javascript text/plain',
+        'access_log' => File.join(@dir, 'nginx-access.log'),
+        'error_log' => File.join(@dir, 'nginx-error.log'),
+        'merge_slashes' => @multiple_slashes == false ? 'on' : 'off',
+
+        'add_header' => {
+          repeat: true,
+          'Referrer-Policy' => "'same-origin' always",
+          'X-Frame-Options' => "'DENY' always",
+          'X-XSS-Protection' => "'1; mode=block' always",
+          'X-Content-Type-Options' => "'nosniff' always",
+        },
+
+        'location /' => {
+          raw: <<~CONFIG,
+            set $normalized #{protocol}$host_normalized$port_normalized$uri_normalized$args_normalized;
+
+            if ($normalized != '$scheme://$host$port$request_uri') {
+              return 308 $normalized;
+            }
+          CONFIG
+
+          'proxy_pass' => "http://#{@host}",
+          'proxy_redirect' => 'off',
+          'proxy_set_header' => {
+            repeat: true,
+            'Host' => '$http_host',
+            'X-Real-IP' => '$remote_addr',
+            'X-Forwarded-For' => '$proxy_add_x_forwarded_for',
+            'X-Forwarded-Proto' => ssl ? 'https' : 'http',
+            'X-Forwarded-Port' => '$x_forwarded_port',
+          }
+        },
+      )
     end
 
     # Internal: Write the Nginx configuration to the (inactive) configuration file.
