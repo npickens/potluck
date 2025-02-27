@@ -177,12 +177,10 @@ module Potluck
       to_nginx_config(config)
     end
 
-    # Internal: Convert a hash to an Nginx configuration file content string. Keys are strings and values
-    # either strings or hashes. Symbol keys are used as special directives. A nil value in a hash will
-    # result in that key-value pair being omitted.
+    # Internal: Convert a hash to an Nginx configuration file content string.
     #
-    # hash    - Hash of String keys and String or Hash values to convert to the string content of an Nginx
-    #           configuration file.
+    # hash    - Hash of String or Symbol keys and String, Array, Hash, or boolean values to convert to the
+    #           string content of an Nginx configuration file.
     # indent: - Integer number of spaces to indent (used when the method is called recursively and should
     #           not be set explicitly).
     # repeat: - String value to prepend to each entry of the hash (used when the method is called
@@ -190,34 +188,67 @@ module Potluck
     #
     # Examples
     #
-    #   # {repeat: true, ...} will cause the parent hash's key to be prefixed to each line of the output.
+    #   # Nil and false values are ignored.
     #
-    #   to_nginx_config(
-    #     'add_header' => {
-    #       repeat: true,
-    #       'X-Frame-Options' => 'DENY',
-    #       'X-Content-Type-Options' => 'nosniff',
-    #     }
-    #   )
+    #     to_nginx_config(
+    #       'charset' => nil,
+    #       'gzip' => 'on',
+    #     )
     #
-    #   # => "add_header X-Frame-Options DENY;
-    #   #     add_header X-Content-Type-Options nosniff;"
+    #     # => "gzip on;"
     #
-    #   # {raw: "..." can be used to include a raw chunk of text rather than key-value pairs.
+    #   # Only the key is included if its value == true.
     #
-    #   to_nginx_config(
-    #     'location /' => {
-    #       raw: """
-    #         if ($scheme = https) { ... }
-    #         if ($host ~ ^www.) { ... }
-    #       """,
-    #     }
-    #   )
+    #     to_nginx_config(
+    #       'listen 80' => true,
+    #     )
     #
-    #   # => "location / {
-    #   #       if ($scheme = https) { ... }
-    #   #       if ($host ~ ^www.) { ... }
-    #   #     }"
+    #     # => "listen 80;"
+    #
+    #   # A repeating directive uses a child Hash with repeat: true.
+    #
+    #     to_nginx_config(
+    #       'add_header' => {
+    #         repeat: true,
+    #         'X-Frame-Options' => 'DENY',
+    #         'X-Content-Type-Options' => 'nosniff',
+    #       }
+    #     )
+    #
+    #     # => "add_header X-Frame-Options DENY;
+    #     #     add_header X-Content-Type-Options nosniff;"
+    #
+    #   # A repeating block uses an Array of Hash.
+    #
+    #     to_nginx_config(
+    #       'server' => [
+    #         {'server_name' => 'hello.world'},
+    #         {'server_name' => 'hi.there'},
+    #       ]
+    #     )
+    #
+    #     # => "server {
+    #     #       server_name hello.world;
+    #     #     }
+    #     #     server {
+    #     #       server_name hi.there;
+    #     #     }"
+    #
+    #   # Raw text uses a :raw key (Symbol, not String) and a String or Array of String.
+    #
+    #     to_nginx_config(
+    #       'location /' => {
+    #         raw: """
+    #           if ($scheme = https) { ... }
+    #           if ($host ~ ^www.) { ... }
+    #         """,
+    #       }
+    #     )
+    #
+    #     # => "location / {
+    #     #       if ($scheme = https) { ... }
+    #     #       if ($host ~ ^www.) { ... }
+    #     #     }"
     #
     # Returns the Nginx configuration String.
     def to_nginx_config(hash, indent: 0, repeat: nil)
@@ -225,7 +256,9 @@ module Potluck
         next if v.nil?
         next if k == :repeat
 
-        if v.kind_of?(Hash) && v[:repeat]
+        if k == :raw
+          config << "#{Array(v).join("\n").gsub(/^(?=.)/, ' ' * indent).rstrip}\n"
+        elsif v.kind_of?(Hash) && v[:repeat]
           config << to_nginx_config(v, indent: indent, repeat: k)
         elsif v.kind_of?(Hash) || v.kind_of?(Array)
           [v].flatten.each do |item|
@@ -236,8 +269,6 @@ module Potluck
                       "#{to_nginx_config(item, indent: indent + 2)}" \
                       "#{' ' * indent}}\n"
           end
-        elsif k == :raw
-          config << "#{v.strip.gsub(/^(?=.)/, ' ' * indent).rstrip}\n"
         else
           config << "#{' ' * indent}#{"#{repeat} " if repeat}#{k}#{" #{v}" unless v == true};\n"
         end
@@ -258,8 +289,8 @@ module Potluck
         **config_maps,
 
         'server' => [
-          Util.deep_merge(config_server(ssl: false), @additional_config),
-          (Util.deep_merge(config_server(ssl: true), @additional_config) if @ssl),
+          Util.deep_merge(config_server(ssl: false), @additional_config, arrays: true),
+          (Util.deep_merge(config_server(ssl: true), @additional_config, arrays: true) if @ssl),
         ],
       }
     end
@@ -364,7 +395,7 @@ module Potluck
           'X-XSS-Protection' => "'1; mode=block' always",
         },
 
-        raw:
+        raw: [
           if @ssl && !ssl
             "return 308 #{normalized};"
           else
@@ -376,6 +407,7 @@ module Potluck
               }
             CONFIG
           end,
+        ],
 
         'location /' => @ssl && !ssl ? nil : {
           'proxy_pass' => "http://#{@host}",
