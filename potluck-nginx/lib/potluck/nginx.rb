@@ -331,7 +331,7 @@ module Potluck
     #
     # Returns the Hash configuration.
     def config_server(ssl:)
-      protocol = @ssl ? 'https://' : 'http://'
+      normalized = "http#{'s' if @ssl}://$host_normalized$port_normalized$uri_normalized$args_normalized"
 
       Util.deep_merge(
         {
@@ -376,26 +376,36 @@ module Potluck
             'X-XSS-Protection' => "'1; mode=block' always",
           },
 
-          'location /' => {
-            raw: <<~CONFIG,
-              set $normalized #{protocol}$host_normalized$port_normalized$uri_normalized$args_normalized;
-
-              if ($normalized != '$scheme://$host$port$request_uri') {
-                return 308 $normalized;
+          **(
+            if @ssl && !ssl
+              {
+                raw: "return 308 #{normalized};",
               }
-            CONFIG
+            else
+              {
+                'location /' => {
+                  raw: <<~CONFIG,
+                    set $normalized #{normalized};
 
-            'proxy_pass' => "http://#{@host}",
-            'proxy_redirect' => 'off',
-            'proxy_set_header' => {
-              repeat: true,
-              'Host' => '$http_host',
-              'X-Real-IP' => '$remote_addr',
-              'X-Forwarded-For' => '$proxy_add_x_forwarded_for',
-              'X-Forwarded-Proto' => ssl ? 'https' : 'http',
-              'X-Forwarded-Port' => '$x_forwarded_port',
-            },
-          },
+                    if ($normalized != '$scheme://$host$port$request_uri') {
+                      return 308 $normalized;
+                    }
+                  CONFIG
+
+                  'proxy_pass' => "http://#{@host}",
+                  'proxy_redirect' => 'off',
+                  'proxy_set_header' => {
+                    repeat: true,
+                    'Host' => '$http_host',
+                    'X-Real-IP' => '$remote_addr',
+                    'X-Forwarded-For' => '$proxy_add_x_forwarded_for',
+                    'X-Forwarded-Proto' => ssl ? 'https' : 'http',
+                    'X-Forwarded-Port' => '$x_forwarded_port',
+                  },
+                },
+              }
+            end
+          ),
         },
       )
     end
