@@ -2,6 +2,9 @@
 
 ## Upcoming (Unreleased)
 
+* Ensure raw Nginx config blocks get concatenated rather than overwritten
+* Use 'http2 on' instead of deprecated 'listen ... http2' in Nginx config
+* Normalize URLs using Nginx maps instead of if statements
 * Raise Sequel's errors instead of wrapping them in `Postgres#connect`
 * **Allow Nginx ports to be configured**
 * Use correct port when performing Nginx URL normalization redirect
