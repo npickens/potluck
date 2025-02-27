@@ -73,7 +73,8 @@ module Potluck
     #
     # hosts                    - String or Array of String hosts.
     # port                     - Integer port that the upstream (Ruby web server) is running on.
-    # subdomains:              - String or Array of String subdomains.
+    # subdomains:              - String or Array of String subdomains. Should be fully qualified (e.g.
+    #                            'sub.hello.com', not 'sub.').
     # ssl:                     - Hash of SSL configuration arguments to pass to SSL.new.
     # one_host:                - Boolean specifying if URLs should be normalized to the first item in the
     #                            hosts array.
