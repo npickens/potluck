@@ -17,10 +17,6 @@ module Potluck
         'ssl_session_cache' => 'shared:SSL:10m',
         'ssl_session_tickets' => 'off',
         'ssl_session_timeout' => '1d',
-        'add_header' => {
-          repeat: true,
-          'Strict-Transport-Security' => '\'max-age=31536000; includeSubDomains\' always',
-        }.freeze,
       }.freeze
 
       CERT_DAYS = 365
