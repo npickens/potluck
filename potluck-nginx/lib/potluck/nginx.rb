@@ -333,81 +333,62 @@ module Potluck
     def config_server(ssl:)
       normalized = "http#{'s' if @ssl}://$host_normalized$port_normalized$uri_normalized$args_normalized"
 
-      Util.deep_merge(
-        {
-          'server_name' => (@hosts + @hosts.map { |h| "www.#{h}" } + @subdomains).join(' '),
-          'listen' => {
-            repeat: true,
-
-            **(
-              if ssl
-                {
-                  "#{self.class.config.https_port} ssl" => true,
-                  "[::]:#{self.class.config.https_port} ssl" => true,
-                }
-              else
-                {
-                  self.class.config.http_port.to_s => true,
-                  "[::]:#{self.class.config.http_port}" => true,
-                }
-              end
-            ),
-          },
+      {
+        'server_name' => (@hosts + @hosts.map { |h| "www.#{h}" } + @subdomains).join(' '),
+        'listen' => {
+          repeat: true,
+          self.class.config.http_port.to_s => (true unless ssl),
+          "[::]:#{self.class.config.http_port}" => (true unless ssl),
+          "#{self.class.config.https_port} ssl" => (true if ssl),
+          "[::]:#{self.class.config.https_port} ssl" => (true if ssl),
         },
 
-        {'http2' => ('on' if ssl)},
-        ssl ? @ssl.config : {},
+        'http2' => ('on' if ssl),
+        **(@ssl.config if ssl),
 
-        {
-          'charset' => 'UTF-8',
-          'gzip' => 'on',
-          'gzip_types' => 'application/javascript application/json application/xml text/css ' \
-                          'text/javascript text/plain',
-          'access_log' => File.join(@dir, 'nginx-access.log'),
-          'error_log' => File.join(@dir, 'nginx-error.log'),
-          'merge_slashes' => @multiple_slashes == false ? 'on' : 'off',
+        'charset' => 'UTF-8',
+        'gzip' => 'on',
+        'gzip_types' => 'application/javascript application/json application/xml text/css ' \
+                        'text/javascript text/plain',
+        'access_log' => File.join(@dir, 'nginx-access.log'),
+        'error_log' => File.join(@dir, 'nginx-error.log'),
+        'merge_slashes' => @multiple_slashes == false ? 'on' : 'off',
 
-          'add_header' => {
-            repeat: true,
-            'Referrer-Policy' => "'same-origin' always",
-            'Strict-Transport-Security' => ('\'max-age=31536000; includeSubDomains\' always' if @ssl),
-            'X-Content-Type-Options' => "'nosniff' always",
-            'X-Frame-Options' => "'DENY' always",
-            'X-XSS-Protection' => "'1; mode=block' always",
-          },
-
-          **(
-            if @ssl && !ssl
-              {
-                raw: "return 308 #{normalized};",
-              }
-            else
-              {
-                'location /' => {
-                  raw: <<~CONFIG,
-                    set $normalized #{normalized};
-
-                    if ($normalized != '$scheme://$host$port$request_uri') {
-                      return 308 $normalized;
-                    }
-                  CONFIG
-
-                  'proxy_pass' => "http://#{@host}",
-                  'proxy_redirect' => 'off',
-                  'proxy_set_header' => {
-                    repeat: true,
-                    'Host' => '$http_host',
-                    'X-Real-IP' => '$remote_addr',
-                    'X-Forwarded-For' => '$proxy_add_x_forwarded_for',
-                    'X-Forwarded-Proto' => ssl ? 'https' : 'http',
-                    'X-Forwarded-Port' => '$x_forwarded_port',
-                  },
-                },
-              }
-            end
-          ),
+        'add_header' => {
+          repeat: true,
+          'Referrer-Policy' => "'same-origin' always",
+          'Strict-Transport-Security' => ('\'max-age=31536000; includeSubDomains\' always' if @ssl),
+          'X-Content-Type-Options' => "'nosniff' always",
+          'X-Frame-Options' => "'DENY' always",
+          'X-XSS-Protection' => "'1; mode=block' always",
         },
-      )
+
+        raw:
+          if @ssl && !ssl
+            "return 308 #{normalized};"
+          else
+            <<~CONFIG
+              set $normalized #{normalized};
+
+              if ($normalized != '$scheme://$host$port$request_uri') {
+                return 308 $normalized;
+              }
+            CONFIG
+          end,
+
+        'location /' => @ssl && !ssl ? nil : {
+          'proxy_pass' => "http://#{@host}",
+          'proxy_redirect' => 'off',
+          'proxy_set_header' => {
+            repeat: true,
+            'Host' => '$http_host',
+            'X-Real-IP' => '$remote_addr',
+            'X-Forwarded-For' => '$proxy_add_x_forwarded_for',
+            'X-Forwarded-Proto' => ssl ? 'https' : 'http',
+            'X-Forwarded-Port' => '$x_forwarded_port',
+          },
+        },
+      }
     end
 
     # Internal: Write the Nginx configuration to the (inactive) configuration file.
