@@ -110,15 +110,15 @@ class NginxTest < Minitest::Test
   ##########################################################################################################
 
   test('does not reduce multiple slashes in URIs when :multiple_slashes is not given') do
-    assert_equal('off', config_entry(nginx, 'server', 'merge_slashes'))
+    assert_equal('off', config_entry(nginx, 'server', 0, 'merge_slashes'))
   end
 
   test('does not reduce multiple slashes in URIs when multiple_slashes: true') do
-    assert_equal('off', config_entry(nginx(multiple_slashes: true), 'server', 'merge_slashes'))
+    assert_equal('off', config_entry(nginx(multiple_slashes: true), 'server', 0, 'merge_slashes'))
   end
 
   test('reduces multiple slashes to a single slash in URIs when multiple_slashes: false') do
-    assert_equal('on', config_entry(nginx(multiple_slashes: false), 'server', 'merge_slashes'))
+    assert_equal('on', config_entry(nginx(multiple_slashes: false), 'server', 0, 'merge_slashes'))
   end
 
   ##########################################################################################################
