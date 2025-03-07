@@ -2,6 +2,7 @@
 
 ## Upcoming (Unreleased)
 
+* **Use a DSL rather than a direct hash for Nginx configuration**
 * Ensure raw Nginx config blocks get concatenated rather than overwritten
 * Use 'http2 on' instead of deprecated 'listen ... http2' in Nginx config
 * Normalize URLs using Nginx maps instead of if statements
