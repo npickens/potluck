@@ -118,7 +118,7 @@ module Potluck
       #
       # Returns false if the method is private and include_private is false, and true otherwise (since
       #   #method_missing is implemented and accepts any method name).
-      def respond_to?(name, include_private = false)
+      def respond_to_missing?(name, include_private = false)
         private_method?(name) ? include_private : true
       end
 
