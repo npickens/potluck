@@ -3,13 +3,11 @@
 
 require('English')
 
-Dir.chdir(File.dirname(__dir__))
-
 if ARGV.size > 0 && ![:major, :minor, :patch].include?(bump = ARGV[0].to_s.strip.to_sym)
   abort('Usage: bin/build [major | minor | patch]')
 end
 
-BASE_DIR = Dir.pwd.freeze
+BASE_DIR = File.dirname(__dir__).freeze
 LIB_NAME = File.basename(Dir[File.join(BASE_DIR, '*.gemspec')].first, '.gemspec').freeze
 GEMSPEC_FILES = (Dir[File.join(BASE_DIR, '*.gemspec')] +
   Dir[File.join(BASE_DIR, "#{LIB_NAME}-*", '*.gemspec')]).freeze
