@@ -538,11 +538,9 @@ class ServiceTest < Minitest::Test
 
   test('.ensure_launchctl! does nothing if launchctl is available') do
     Potluck::Service.stub(:launchctl?, true) do
-      begin
-        Potluck::Service.ensure_launchctl!
-      rescue => e
-        flunk("Expected: no error\n  Actual: #{e.inspect}")
-      end
+      Potluck::Service.ensure_launchctl!
+    rescue => e
+      flunk("Expected: no error\n  Actual: #{e.inspect}")
     end
   end
 
