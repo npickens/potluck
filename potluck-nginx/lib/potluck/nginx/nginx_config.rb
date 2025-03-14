@@ -65,7 +65,7 @@ module Potluck
       #
       # Returns self.
       def modify(&block)
-        block.call(self) if block
+        block&.call(self)
 
         self
       end
@@ -366,10 +366,10 @@ module Potluck
       # Returns the Symbol key.
       def next_raw_key
         index = contextual_config
-          .keys
-          .select { |k| k.match?(RAW_KEY_REGEX) }
-          .map { |k| k[RAW_KEY_REGEX, :index].to_i }
-          .last
+                  .keys
+                  .grep(RAW_KEY_REGEX)
+                  .map { |k| k[RAW_KEY_REGEX, :index].to_i }
+                  .last
 
         :"raw[#{(index || -1) + 1}]"
       end

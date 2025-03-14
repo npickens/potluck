@@ -5,7 +5,7 @@ version = File.read(File.join(__dir__, 'VERSION')).strip.freeze
 Gem::Specification.new('potluck-nginx', version) do |spec|
   spec.authors       = ['Nate Pickens']
   spec.summary       = 'A Ruby manager for Nginx.'
-  spec.description   = 'An extension to the Potluck gem that provides control over the Nginx process and '\
+  spec.description   = 'An extension to the Potluck gem that provides control over the Nginx process and ' \
                        'its configuration files from Ruby.'
   spec.homepage      = 'https://github.com/npickens/potluck/tree/master/potluck-nginx'
   spec.license       = 'MIT'

@@ -112,6 +112,7 @@ class ServiceTest < Minitest::Test
 
   test('#status returns :inactive if management is not enabled') do
     service = Potluck::Service.new(manage: false)
+
     assert_equal(:inactive, service.status)
   end
 
@@ -190,8 +191,10 @@ class ServiceTest < Minitest::Test
       end
     end
 
-    assert_equal("launchctl bootstrap gui/#{Process.uid} #{File.join(TMP_DIR,
-      'potluck.npickens.service.plist')}", run_command)
+    assert_equal(
+      "launchctl bootstrap gui/#{Process.uid} #{File.join(TMP_DIR, 'potluck.npickens.service.plist')}",
+      run_command
+    )
   end
 
   test('#start runs custom start command when custom management is enabled') do
@@ -398,6 +401,7 @@ class ServiceTest < Minitest::Test
     begin
       service.run('echo Hello && exit 1')
     rescue Potluck::ServiceError
+      # Do nothing
     end
 
     assert_match(/ERROR .* Hello$/, io.string)
@@ -493,10 +497,10 @@ class ServiceTest < Minitest::Test
   ##########################################################################################################
 
   test('.plist returns plist content') do
-    plist = <<~EOS
+    plist = <<~XML
       <?xml version="1.0" encoding="UTF-8"?>
-      #{'<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.'\
-        '0.dtd">'}
+      #{'<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0' \
+        '.dtd">'}
       <plist version="1.0">
       <dict>
         <key>Label</key>
@@ -508,7 +512,7 @@ class ServiceTest < Minitest::Test
         <other>
       </dict>
       </plist>
-    EOS
+    XML
 
     assert_equal(plist, Potluck::Service.plist('<other>'))
   end

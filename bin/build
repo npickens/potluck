@@ -3,10 +3,6 @@
 
 require('English')
 
-if ARGV.size > 0 && ![:major, :minor, :patch].include?(bump = ARGV[0].to_s.strip.to_sym)
-  abort('Usage: bin/build [major | minor | patch]')
-end
-
 BASE_DIR = File.dirname(__dir__).freeze
 LIB_NAME = File.basename(Dir[File.join(BASE_DIR, '*.gemspec')].first, '.gemspec').freeze
 GEMSPEC_FILES = (Dir[File.join(BASE_DIR, '*.gemspec')] +
@@ -18,11 +14,12 @@ TEST_COMMAND = File.join(BASE_DIR, 'bin', 'test').freeze
 OLD_VERSION = File.read(VERSION_FILES.first).strip.freeze
 major, minor, patch = OLD_VERSION.split('.').map(&:to_i)
 NEW_VERSION =
-  case bump || :patch
-  when :major then "#{major + 1}.0.0"
-  when :minor then "#{major}.#{minor + 1}.0"
-  when :patch then "#{major}.#{minor}.#{patch + 1}"
-  end
+  case ARGV.first&.to_sym
+  when :major      then "#{major + 1}.0.0"
+  when :minor      then "#{major}.#{minor + 1}.0"
+  when :patch, nil then "#{major}.#{minor}.#{patch + 1}"
+  else abort('Usage: bin/build [major | minor | patch]')
+  end.freeze
 
 ############################################################################################################
 ## Tasks                                                                                                  ##
@@ -30,13 +27,13 @@ NEW_VERSION =
 
 def test
   task(
-    preamble: 'Running tests...',
     command: TEST_COMMAND,
+    preamble: 'Running tests...',
     success: 'Tests passed',
   )
 end
 
-def update_version(version = NEW_VERSION, quiet = false)
+def update_version(version = NEW_VERSION, quiet: false)
   begin_task('Updating version number...') unless quiet
 
   VERSION_FILES.each do |version_file|
@@ -59,20 +56,20 @@ def build
     lib_name = File.basename(gemspec_file, '.gemspec')
 
     task(
-      preamble: "Building Ruby gem#{" (#{lib_name})" if multiple}...",
       command: ["cd #{File.dirname(gemspec_file)}", "gem build #{File.basename(gemspec_file)}"],
+      preamble: "Building Ruby gem#{" (#{lib_name})" if multiple}...",
       success: "Ruby gem built (#{lib_name}-#{NEW_VERSION}.gem)",
     )
   end
 ensure
-  (update_version(OLD_VERSION, :quiet) rescue nil) unless $CHILD_STATUS.success?
+  update_version(OLD_VERSION, quiet: true) unless $CHILD_STATUS.success?
 end
 
 ############################################################################################################
 ## Utils                                                                                                  ##
 ############################################################################################################
 
-def task(preamble: nil, command:, success: nil, failure: nil)
+def task(command:, preamble: nil, success: nil, failure: nil)
   begin_task(preamble) if preamble
   system(Array(command).join(' && '))
 

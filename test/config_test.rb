@@ -20,8 +20,8 @@ class ConfigTest < Minitest::Test
   test('constructor yields the instance being created if a block is given') do
     yielded_object = nil
 
-    config = Potluck::Config.new do |config|
-      yielded_object = config
+    config = Potluck::Config.new do |c|
+      yielded_object = c
     end
 
     assert_equal(config, yielded_object)

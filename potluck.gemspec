@@ -5,9 +5,9 @@ version = File.read(File.join(__dir__, 'VERSION')).strip.freeze
 Gem::Specification.new('potluck', version) do |spec|
   spec.authors       = ['Nate Pickens']
   spec.summary       = 'An extensible Ruby framework for managing external processes.'
-  spec.description   = 'Potluck provides a simple interface for managing external processes in a way that '\
-                       'plays nice with others as well as smoothly handling both development and '\
-                       'production environments. Current official gem extensions provide Nginx and '\
+  spec.description   = 'Potluck provides a simple interface for managing external processes in a way ' \
+                       'that plays nice with others as well as smoothly handling both development and ' \
+                       'production environments. Current official gem extensions provide Nginx and ' \
                        'Postgres management.'
   spec.homepage      = 'https://github.com/npickens/potluck'
   spec.license       = 'MIT'

@@ -17,7 +17,7 @@ module Potluck
     #
     # Returns the String name.
     def self.pretty_name
-      @pretty_name ||= self.to_s.split('::').last
+      @pretty_name ||= to_s.split('::').last
     end
 
     # Public: Get the computer-friendly name of the service.
@@ -45,10 +45,10 @@ module Potluck
     #
     # Returns the String content.
     def self.plist(content = '')
-      <<~EOS
+      <<~XML
         <?xml version="1.0" encoding="UTF-8"?>
-        #{'<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.'\
-          '0.dtd">'}
+        #{'<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1' \
+          '.0.dtd">'}
         <plist version="1.0">
         <dict>
           <key>Label</key>
@@ -60,7 +60,7 @@ module Potluck
           #{content.gsub(/^/, '  ').strip}
         </dict>
         </plist>
-      EOS
+      XML
     end
 
     # Public: Write the service's launchctl plist file to disk.
@@ -75,7 +75,11 @@ module Potluck
     #
     # Returns the boolean result.
     def self.launchctl?
-      defined?(@@launchctl) ? @@launchctl : (@@launchctl = `which launchctl 2>&1` && $CHILD_STATUS.success?)
+      return @@launchctl if defined?(@@launchctl)
+
+      `which launchctl 2>&1`
+
+      @@launchctl = $CHILD_STATUS.success?
     end
 
     # Public: Raise an error if launchctl is not available.
@@ -98,7 +102,7 @@ module Potluck
     #           stop:               - String command for stopping the service.
     def initialize(logger: nil, manage: self.class.launchctl?)
       @logger = logger
-      @manage = !!manage
+      @manage = manage
       @manage_with_launchctl = false
 
       if manage.kind_of?(Hash)
@@ -202,11 +206,11 @@ module Potluck
       output = `#{command}#{' 2>&1' if capture_stderr}`
       status = $CHILD_STATUS
 
-      if !status.success?
+      if status.success?
+        output
+      else
         output.split("\n").each { |line| log(line, :error) }
         raise(ServiceError, "Command exited with status #{status.exitstatus}: #{command}")
-      else
-        output
       end
     end
 
@@ -264,7 +268,7 @@ module Potluck
     # Returns nothing.
     def wait(timeout = 30, &block)
       while block.call && timeout > 0
-        reduce = [[(30 - timeout.to_i) / 5.0, 0.1].max, 1].min
+        reduce = ((30 - timeout.to_i) / 5.0).clamp(0.1, 1)
         timeout -= reduce
 
         sleep(reduce)

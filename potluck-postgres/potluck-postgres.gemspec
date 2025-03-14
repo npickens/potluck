@@ -5,8 +5,9 @@ version = File.read(File.join(__dir__, 'VERSION')).strip.freeze
 Gem::Specification.new('potluck-postgres', version) do |spec|
   spec.authors       = ['Nate Pickens']
   spec.summary       = 'A Ruby manager for Postgres.'
-  spec.description   = 'An extension to the Potluck gem that provides some basic utilities for setting up '\
-                       'and connecting to Postgres databases, as well as control over the Postgres process.'
+  spec.description   = 'An extension to the Potluck gem that provides some basic utilities for setting ' \
+                       'up and connecting to Postgres databases, as well as control over the Postgres ' \
+                       'process.'
   spec.homepage      = 'https://github.com/npickens/potluck/tree/master/potluck-postgres'
   spec.license       = 'MIT'
   spec.files         = Dir['lib/**/*.rb', 'LICENSE', 'README.md', 'VERSION']

@@ -42,7 +42,7 @@ module Potluck
       dir = postgres_dir
 
       super(
-        <<~EOS
+        <<~XML
           <key>EnvironmentVariables</key>
           <dict>
             <key>LC_ALL</key>
@@ -60,7 +60,7 @@ module Potluck
           <string>#{Potluck.config.homebrew_prefix}/var/log/#{dir}.log</string>
           <key>StandardErrorPath</key>
           <string>#{Potluck.config.homebrew_prefix}/var/log/#{dir}.log</string>
-        EOS
+        XML
       )
     end
 
@@ -74,7 +74,7 @@ module Potluck
       end
 
       if versions.empty?
-        raise(PostgresError, "No Postgres installation found (try running `brew install postgresql@X`)")
+        raise(PostgresError, 'No Postgres installation found (try running `brew install postgresql@X`)')
       end
 
       File.basename(versions.last)
@@ -212,12 +212,12 @@ module Potluck
 
       begin
         Sequel.connect(tmp_config, logger: @logger) do |database|
-          database.execute("CREATE ROLE \"#{@config[:username]}\" WITH LOGIN CREATEDB REPLICATION"\
+          database.execute("CREATE ROLE \"#{@config[:username]}\" WITH LOGIN CREATEDB REPLICATION" \
             "#{" PASSWORD '#{@config[:password]}'" if @config[:password]}")
         end
       rescue => e
-        raise(PostgresError.new("Failed to create database role #{@config[:username].inspect} by "\
-          "connecting to database #{tmp_config[:database].inspect} as role "\
+        raise(PostgresError.new("Failed to create database role #{@config[:username].inspect} by " \
+          "connecting to database #{tmp_config[:database].inspect} as role " \
           "#{tmp_config[:username].inspect}. Please create the role manually.", e))
       end
     end
@@ -236,8 +236,8 @@ module Potluck
           database.execute("CREATE DATABASE \"#{@config[:database]}\"")
         end
       rescue => e
-        raise(PostgresError.new("Failed to create database #{@config[:database].inspect} by connecting to "\
-          "database #{tmp_config[:database].inspect} as role #{tmp_config[:username].inspect}. "\
+        raise(PostgresError.new("Failed to create database #{@config[:database].inspect} by connecting " \
+          "to database #{tmp_config[:database].inspect} as role #{tmp_config[:username].inspect}. " \
           'Please create the database manually.', e))
       end
     end
@@ -254,12 +254,12 @@ module Potluck
         Sequel.connect(tmp_config, logger: @logger) do |db|
           db.execute("GRANT ALL PRIVILEGES ON ALL TABLES IN SCHEMA public TO \"#{@config[:username]}\"")
           db.execute("GRANT ALL PRIVILEGES ON ALL SEQUENCES IN SCHEMA public TO \"#{@config[:username]}\"")
-          db.execute("ALTER DEFAULT PRIVILEGES FOR ROLE \"#{@config[:username]}\" IN SCHEMA public GRANT "\
+          db.execute("ALTER DEFAULT PRIVILEGES FOR ROLE \"#{@config[:username]}\" IN SCHEMA public GRANT " \
             "ALL PRIVILEGES ON TABLES TO \"#{@config[:username]}\"")
         end
       rescue => e
-        raise(PostgresError.new("Failed to grant database permissions for role "\
-          "#{@config[:username].inspect} by connecting as role #{tmp_config[:username].inspect}. Please "\
+        raise(PostgresError.new('Failed to grant database permissions for role ' \
+          "#{@config[:username].inspect} by connecting as role #{tmp_config[:username].inspect}. Please " \
           'grant appropriate permissions manually.', e))
       end
     end

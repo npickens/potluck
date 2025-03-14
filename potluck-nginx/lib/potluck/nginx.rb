@@ -35,6 +35,7 @@ module Potluck
 
     TEST_CONFIG_REGEX = /nginx: configuration file (?<config>.+) test (?:failed|is successful)/
     INCLUDE_REGEX = /^ *include +#{Regexp.escape(ACTIVE_CONFIG_PATTERN)} *;/
+    HTTP_BLOCK_REGEX = /^( *http *{)( *\n?)( *)/
 
     NON_LAUNCHCTL_COMMANDS = {
       status: 'ps aux | grep \'[n]ginx: master process\'',
@@ -53,7 +54,7 @@ module Potluck
     # Returns the String content.
     def self.plist
       super(
-        <<~EOS
+        <<~XML
           <key>ProgramArguments</key>
           <array>
             <string>#{Potluck.config.homebrew_prefix}/opt/nginx/bin/nginx</string>
@@ -64,7 +65,7 @@ module Potluck
           <string>#{Potluck.config.homebrew_prefix}/var/log/nginx/access.log</string>
           <key>StandardErrorPath</key>
           <string>#{Potluck.config.homebrew_prefix}/var/log/nginx/error.log</string>
-        EOS
+        XML
       )
     end
 
@@ -143,8 +144,8 @@ module Potluck
       @server_names = @hosts + @hosts.map { |h| "www.#{h}" } + @subdomains
       @var_prefix = "$#{@host.downcase.gsub(/[^a-z0-9]/, '_')}"
       @port = port
-      @ssl = !!ssl
-      @one_host = !!one_host
+      @ssl = ssl
+      @one_host = one_host
       @www = www
       @multiple_slashes = multiple_slashes
       @multiple_question_marks = multiple_question_marks
@@ -448,7 +449,7 @@ module Potluck
       run(
         <<~CMD
           sudo sh -c 'printf "
-          #{missing_entries.map { |h| "127.0.0.1 #{h}\n::1       #{h}"}.join("\n")}
+          #{missing_entries.map { |h| "127.0.0.1 #{h}\n::1       #{h}" }.join("\n")}
           " >> /etc/hosts'
         CMD
       )
@@ -463,9 +464,10 @@ module Potluck
       config_file = `nginx -t 2>&1`[TEST_CONFIG_REGEX, :config]
       config_content = File.read(config_file)
 
-      if config_content !~ INCLUDE_REGEX
-        File.write(config_file, config_content.sub(/^( *http *{)( *\n?)( *)/,
-          "\\1\\2\\3include #{ACTIVE_CONFIG_PATTERN};\n\n\\3"))
+      unless config_content.match?(INCLUDE_REGEX)
+        config_content.sub!(HTTP_BLOCK_REGEX, "\\1\\2\\3include #{ACTIVE_CONFIG_PATTERN};\n\n\\3")
+
+        File.write(config_file, config_content)
       end
     end
 

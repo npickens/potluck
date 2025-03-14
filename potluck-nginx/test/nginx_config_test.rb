@@ -259,30 +259,30 @@ class NginxConfigTest < Minitest::Test
   test('#respond_to? returns true if the method is public') do
     config = Potluck::Nginx::NginxConfig.new
 
-    assert(config.respond_to?(:modify))
+    assert_respond_to(config, :modify)
   end
 
   test('#respond_to? returns false if the method is private') do
     config = Potluck::Nginx::NginxConfig.new
 
-    refute(config.respond_to?(:add_directive))
+    refute_respond_to(config, :add_directive)
   end
 
   test('#respond_to? returns false if the method is private and include_private = false') do
     config = Potluck::Nginx::NginxConfig.new
 
-    refute(config.respond_to?(:add_directive, false))
+    refute_respond_to(config, :add_directive, include_all: false)
   end
 
   test('#respond_to? returns true if the method is private and include_private = true') do
     config = Potluck::Nginx::NginxConfig.new
 
-    assert(config.respond_to?(:add_directive, true))
+    assert_respond_to(config, :add_directive, include_all: true)
   end
 
   test('#respond_to? returns true if the method is not implemented') do
     config = Potluck::Nginx::NginxConfig.new
 
-    assert(config.respond_to?(:hello_world))
+    assert_respond_to(config, :hello_world)
   end
 end
