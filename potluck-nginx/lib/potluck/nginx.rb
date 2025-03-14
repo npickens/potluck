@@ -33,7 +33,7 @@ module Potluck
     CONFIG_NAME_INACTIVE = 'nginx-stopped.conf'
     ACTIVE_CONFIG_PATTERN = File.join(Potluck.config.dir, '*', CONFIG_NAME_ACTIVE).freeze
 
-    TEST_CONFIG_REGEX = /nginx: configuration file (?<config>.+) test (failed|is successful)/
+    TEST_CONFIG_REGEX = /nginx: configuration file (?<config>.+) test (?:failed|is successful)/
     INCLUDE_REGEX = /^ *include +#{Regexp.escape(ACTIVE_CONFIG_PATTERN)} *;/
 
     NON_LAUNCHCTL_COMMANDS = {
