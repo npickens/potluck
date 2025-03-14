@@ -12,7 +12,7 @@ module Potluck
     #
     # Examples
     #
-    #   nginx = Nginx.new('hello.world', 1234) do |c|
+    #   config = NginxConfig.new do |c|
     #     c.server do
     #       c.access_log('/path/to/access.log')
     #       c.add_header('X-Greeting', "'hello' always")
@@ -20,7 +20,7 @@ module Potluck
     #   end
     #
     #   # Add more configuration.
-    #   nginx.config do |c|
+    #   config.modify do |c|
     #     c.server do
     #       c.add_header('X-Subject', "'world' always")
     #     end
