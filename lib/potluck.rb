@@ -4,7 +4,7 @@ require_relative('potluck/config')
 require_relative('potluck/service')
 require_relative('potluck/version')
 
-# Main module providing an extensible Ruby framework for managing external processes.
+# Public: Main module providing an extensible Ruby framework for managing external processes.
 module Potluck
   @config = Config.new
 

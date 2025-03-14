@@ -3,11 +3,11 @@
 require('fileutils')
 
 module Potluck
-  # General error class used for errors encountered with a service.
+  # Public: General error class used for errors encountered with a service.
   class ServiceError < StandardError; end
 
-  # A Ruby interface for configuring, controlling, and interacting with external processes. Serves as a
-  # parent class for service-specific child classes.
+  # Public: A Ruby interface for configuring, controlling, and interacting with external processes. Serves
+  # as a parent class for service-specific child classes.
   class Service
     SERVICE_PREFIX = 'potluck.npickens.'
     LAUNCHCTL_ERROR_REGEX = /^-|\t[^0]\t/

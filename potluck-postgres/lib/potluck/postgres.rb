@@ -5,7 +5,7 @@ require('sequel')
 require_relative('postgres/version')
 
 module Potluck
-  # Error class used to wrap errors encountered while connecting to or setting up a database.
+  # Public: Error class used to wrap errors encountered while connecting to or setting up a database.
   class PostgresError < ServiceError
     attr_reader(:wrapped_error)
 
@@ -20,8 +20,9 @@ module Potluck
     end
   end
 
-  # A Ruby interface for controlling and connecting to Postgres. Uses the Sequel gem to connect and perform
-  # automatic role and database creation, as well as for utility methods such as database schema migration.
+  # Public: A Ruby interface for controlling and connecting to Postgres. Uses the Sequel gem to connect and
+  # perform automatic role and database creation, as well as for utility methods such as database schema
+  # migration.
   class Postgres < Service
     ROLE_NOT_FOUND_REGEX = /role .* does not exist/
     DATABASE_NOT_FOUND_REGEX = /database .* does not exist/

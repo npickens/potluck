@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
 module Potluck
-  # Configuration settings for Potluck services.
+  # Public: Configuration settings for Potluck services.
   class Config
     DEFAULT_DIR = File.expand_path(File.join(Dir.home, '.potluck')).freeze
     OLD_HOMEBREW_PREFIX = '/usr/local'
