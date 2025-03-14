@@ -1,5 +1,7 @@
 # frozen_string_literal: true
 
+require('delegate')
+
 module Potluck
   class Nginx < Service
     # Public: Class for building and generating Nginx config file content. An instance of this class is
