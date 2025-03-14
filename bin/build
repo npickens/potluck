@@ -1,6 +1,8 @@
 #!/usr/bin/env ruby
 # frozen_string_literal: true
 
+require('English')
+
 Dir.chdir(File.dirname(__dir__))
 
 if ARGV.size > 0 && ![:major, :minor, :patch].include?(bump = ARGV[0].to_s.strip.to_sym)
@@ -65,7 +67,7 @@ def build
     )
   end
 ensure
-  (update_version(OLD_VERSION, :quiet) rescue nil) unless $?.success?
+  (update_version(OLD_VERSION, :quiet) rescue nil) unless $CHILD_STATUS.success?
 end
 
 ############################################################################################################
@@ -76,8 +78,8 @@ def task(preamble: nil, command:, success: nil, failure: nil)
   begin_task(preamble) if preamble
   system(Array(command).join(' && '))
 
-  if !$?.success?
-    finish_task($?.exitstatus, failure)
+  if !$CHILD_STATUS.success?
+    finish_task($CHILD_STATUS.exitstatus, failure)
   elsif success
     finish_task(success)
   end

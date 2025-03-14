@@ -1,5 +1,6 @@
 # frozen_string_literal: true
 
+require('English')
 require('fileutils')
 
 module Potluck
@@ -74,7 +75,7 @@ module Potluck
     #
     # Returns the boolean result.
     def self.launchctl?
-      defined?(@@launchctl) ? @@launchctl : (@@launchctl = `which launchctl 2>&1` && $?.success?)
+      defined?(@@launchctl) ? @@launchctl : (@@launchctl = `which launchctl 2>&1` && $CHILD_STATUS.success?)
     end
 
     # Public: Raise an error if launchctl is not available.
@@ -134,7 +135,7 @@ module Potluck
 
       output = `#{status_command}`
 
-      if !$?.success?
+      if !$CHILD_STATUS.success?
         :inactive
       elsif status_error_regex && output[status_error_regex]
         :error
@@ -199,7 +200,7 @@ module Potluck
     # Raises ServiceError if the command exited with a non-zero status.
     def run(command, capture_stderr: true)
       output = `#{command}#{' 2>&1' if capture_stderr}`
-      status = $?
+      status = $CHILD_STATUS
 
       if !status.success?
         output.split("\n").each { |line| log(line, :error) }
