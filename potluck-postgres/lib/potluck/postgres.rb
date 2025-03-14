@@ -271,7 +271,7 @@ module Potluck
     # Returns the configuration Hash.
     def admin_database_config
       config = @config.dup
-      config[:username] = ENV['USER']
+      config[:username] = ENV.fetch('USER')
       config[:password] = nil
 
       config
