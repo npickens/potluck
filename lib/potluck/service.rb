@@ -74,7 +74,7 @@ module Potluck
     #
     # Returns the boolean result.
     def self.launchctl?
-      defined?(@@launchctl) ? @@launchctl : (@@launchctl = `which launchctl 2>&1` && $? == 0)
+      defined?(@@launchctl) ? @@launchctl : (@@launchctl = `which launchctl 2>&1` && $?.success?)
     end
 
     # Public: Raise an error if launchctl is not available.
@@ -134,7 +134,7 @@ module Potluck
 
       output = `#{status_command}`
 
-      if $? != 0
+      if !$?.success?
         :inactive
       elsif status_error_regex && output[status_error_regex]
         :error
@@ -201,7 +201,7 @@ module Potluck
       output = `#{command}#{' 2>&1' if capture_stderr}`
       status = $?
 
-      if status != 0
+      if !status.success?
         output.split("\n").each { |line| log(line, :error) }
         raise(ServiceError, "Command exited with status #{status.exitstatus}: #{command}")
       else

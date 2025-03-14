@@ -65,7 +65,7 @@ def build
     )
   end
 ensure
-  (update_version(OLD_VERSION, :quiet) rescue nil) if $?.exitstatus != 0
+  (update_version(OLD_VERSION, :quiet) rescue nil) unless $?.success?
 end
 
 ############################################################################################################
@@ -76,7 +76,7 @@ def task(preamble: nil, command:, success: nil, failure: nil)
   begin_task(preamble) if preamble
   system(Array(command).join(' && '))
 
-  if $?.exitstatus != 0
+  if !$?.success?
     finish_task($?.exitstatus, failure)
   elsif success
     finish_task(success)
