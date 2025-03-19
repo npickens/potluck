@@ -2,6 +2,10 @@
 
 ## Upcoming (Unreleased)
 
+* Nothing yet
+
+## 0.0.8 (2025 March 19)
+
 * **Use a DSL rather than a direct hash for Nginx configuration**
 * Ensure raw Nginx config blocks get concatenated rather than overwritten
 * Use 'http2 on' instead of deprecated 'listen ... http2' in Nginx config
