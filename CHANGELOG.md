@@ -7,10 +7,7 @@
 * Use 'http2 on' instead of deprecated 'listen ... http2' in Nginx config
 * Normalize URLs using Nginx maps instead of if statements
 * Raise Sequel's errors instead of wrapping them in `Postgres#connect`
-* **Allow Nginx ports to be configured**
 * Use correct port when performing Nginx URL normalization redirect
-* Convert `Nginx.to_nginx_config` to instance method and make it private
-* Make `Nginx#config_file_content` private
 * **Add Config class to allow for custom directory and Homebrew locations**
 * **Require Ruby 3.0.0 or later**
 * **Deprecate `Postgres#migrate`**
