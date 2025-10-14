@@ -294,11 +294,12 @@ module Potluck
     #
     # Returns nothing.
     def add_path_map_config
-      config.map("$uri #{@var_prefix}_uri") do |c|
+      config.map("$request_uri #{@var_prefix}_uri") do |c|
         c << {
-          'default' => '$uri',
-          '~^(.*/[^/.]+)/+$' => ('$1' if @trailing_slash == false),
-          '~^(.*/[^/.]+)$' => ('$1/' if @trailing_slash),
+          'default' => '$request_uri',
+          '~^(.*/[^/?.]+)/+(\\?.*)?$' => ('$1' if @trailing_slash == false),
+          '~^(.*/[^/?.]+)(\\?.*)?$' => ('$1/' if @trailing_slash),
+          '~^([^?]+)(\\?.*)?$' => '$1',
         }
       end
     end
